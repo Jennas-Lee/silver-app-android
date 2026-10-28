@@ -16,7 +16,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Lint, unit test, debug build
         run: ./gradlew lintDebug testDebugUnitTest assembleDebug
       - name: Upload lint report
