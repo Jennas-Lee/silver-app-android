@@ -1,0 +1,18 @@
+# Gradle / 빌드
+.gradle/
+build/
+.kotlin/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# 로컬 설정과 비밀값
+local.properties
+*.jks
+*.keystore
+google-services.json
