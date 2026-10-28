@@ -75,7 +75,10 @@ android {
 }
 
 kotlin {
-    jvmToolchain(17)
+    // 빌드 JDK는 17 이상이면 무엇이든 OK, 출력 바이트코드만 17로 고정
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
 }
 
 dependencies {
