@@ -66,6 +66,9 @@ object GuardStore {
 
     fun find(id: String): GuardRecord? = _records.value.firstOrNull { it.id == id }
 
+    fun contains(sender: String, body: String): Boolean =
+        _records.value.any { it.sender == sender && it.body == body }
+
     private fun save(list: List<GuardRecord>) {
         _records.value = list
         runCatching { file?.writeText(ApiClient.json.encodeToString(list)) }
