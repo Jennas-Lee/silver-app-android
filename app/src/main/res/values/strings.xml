@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">실버 도우미</string>
+    <string name="guard_service_label">실버 도우미 문자 지킴이</string>
 </resources>

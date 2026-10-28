@@ -8,13 +8,18 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.POST
 import java.util.concurrent.TimeUnit
 
 /** 백엔드 API. 명세: silver-app-backend/docs/api/v1.md */
 interface SilverApi {
     @GET("api/health")
     suspend fun health(): HealthResponse
+
+    @POST("api/v1/messages/classify")
+    suspend fun classifyMessage(@Body request: ClassifyRequest): ClassifyResponse
 }
 
 @Serializable
@@ -22,6 +27,23 @@ data class HealthResponse(
     val status: String,
     val version: String,
     val time: String,
+)
+
+@Serializable
+data class ClassifyRequest(
+    val source: String,
+    val sender: String,
+    val senderInContacts: Boolean,
+    val body: String,
+    val ruleHits: List<String>,
+)
+
+@Serializable
+data class ClassifyResponse(
+    /** safe | suspicious | malicious */
+    val verdict: String,
+    val category: String,
+    val reason: String,
 )
 
 object ApiClient {
