@@ -72,6 +72,22 @@ adb shell pm grant io.github.jennaslee.silverapp.debug android.permission.POST_N
 adb emu sms send +447700900123 "[Web발신] 택배 주소 불일치로 보류중입니다. 확인 bit.ly/3xYzAbc"
 ```
 
+### 1차 규칙 평가 (데이터셋)
+[jmjmjm3/kor-smishing-message](https://huggingface.co/datasets/jmjmjm3/kor-smishing-message) (CC BY-NC-SA 4.0, 저장소에 포함하지 않음)로 `MessageRules`를 평가합니다.
+```bash
+# smishing.csv를 받아 ../.data/kor-smishing/ 에 두거나 SMISHING_CSV 환경변수로 경로 지정
+./gradlew testDebugUnitTest --tests '*RulesDatasetEval*'
+# 결과: app/build/reports/rules-eval.txt (놓친 스미싱, 잘못 경고한 정상 예시 포함)
+```
+
+| 지표 (17,595건) | 결과 |
+|---|---|
+| 스미싱을 놓침 (SAFE) | 1.6% (5,677건 중 92건) |
+| 정상을 서버로 보냄 | 20.2% (비용에만 영향) |
+| 정상을 고위험으로 봄 (서버 실패 시 잘못 경고) | 0.4% |
+
+데이터셋에 보낸 사람 정보가 없어 모두 "연락처에 없는 국내 번호"로 가정했습니다. 규칙을 바꾸면 이 평가를 다시 돌려 숫자가 나빠지지 않았는지 확인하세요.
+
 ## 기여 방법
 
 - 브랜치: `main`에서 `feat/`, `fix/`, `chore/`, `docs/` 접두어로 생성

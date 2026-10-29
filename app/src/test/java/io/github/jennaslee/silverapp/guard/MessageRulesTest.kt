@@ -51,6 +51,35 @@ class MessageRulesTest {
         assertTrue(r.level >= Level.SUSPICIOUS)
     }
 
+    // 데이터셋 평가에서 찾은 문제 (회귀 방지)
+
+    @Test
+    fun `줄바꿈이 있는 가짜 결제 승인 문자도 잡는다`() {
+        val r = check("[Web발신]\n㈜카카오페이\n승인번호 607488\n868.000원 결제완료 되었습니다.\n070-8064-1374㈜카카오페이")
+        assertTrue(r.level >= Level.SUSPICIOUS)
+        assertTrue(r.hits.any { it.startsWith("payment_callback") })
+    }
+
+    @Test
+    fun `가족 사칭 변형 표현을 잡는다`() {
+        assertTrue(check("엄마 나 핸드폰 고장나서 수리맡기고 문자나라로 문자하는거야 문자보면 답줘").level >= Level.SUSPICIOUS)
+        assertTrue(check("엄마 나 폰고장나서 이번호 0105810001 카톡추가하고 톡줘~").level >= Level.SUSPICIOUS)
+        assertTrue(check("아빠~ 지금 구글기프트카드가 좀 필요한데 대신 먼저 구매해줄수 잇어?").level >= Level.SUSPICIOUS)
+    }
+
+    @Test
+    fun `낯선 끝자리 주소와 문서 열람 유도를 잡는다`() {
+        val r = check("[Web발신] (국민건강보험공단) 종합검진 진단서 발송완료 내용확인 : nnop.djv3.pet")
+        assertTrue(r.level >= Level.SUSPICIOUS)
+        assertTrue("url" in r.hits)
+    }
+
+    @Test
+    fun `통신사 사칭 주의 안내는 서버 판정 전에 경고하지 않는다`() {
+        val r = check("[Web발신] [SKT] 정부 기관 및 가족 사칭 문자 주의 안내. 검찰을 사칭하며 신분증, 계좌 비밀번호를 요구하는 문자에 주의하세요.")
+        assertTrue(r.level != Level.HIGH_RISK)
+    }
+
     // 정상 문자 → 서버에 묻지 않음 (SAFE)
 
     @Test
