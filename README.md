@@ -34,7 +34,7 @@
 
 **GitHub 설정**
 - Variables: `API_BASE_URL` (Vercel 프로덕션 주소)
-- Secrets: `DEVICE_TOKEN`, `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
+- Secrets: `DEVICE_TOKENS` (서버 Vercel의 `DEVICE_TOKENS`와 같은 값), `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
 
 키스토어 만들기:
 ```bash
