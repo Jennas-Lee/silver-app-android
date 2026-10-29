@@ -52,7 +52,7 @@ base64 -w0 release.jks   # 출력값을 KEYSTORE_BASE64에 등록
 | `RECEIVE_SMS` | 문자 원문 확인 (아래 참고) | ✅ |
 | `POST_NOTIFICATIONS` | 위험한 문자 경고 알림 (Android 13+) | ✅ |
 | `READ_CONTACTS` (선택) | 연락처에 있는 발신자 제외 | ✅ |
-| `CAMERA`, `RECORD_AUDIO` | 키오스크 촬영, 음성 질문 | 예정 |
+| `CAMERA` | 키오스크 화면 촬영 (음성 질문은 휴대폰 기본 음성 입력 창을 써서 마이크 권한 불필요) | ✅ |
 | 통화 스크리닝 역할 (`ROLE_CALL_SCREENING`) | 수신 전화 번호 판정 | 4 |
 | `<queries>` 원격제어 앱 패키지 | 통화 후 원격제어 앱 설치 감지 | 예정 |
 

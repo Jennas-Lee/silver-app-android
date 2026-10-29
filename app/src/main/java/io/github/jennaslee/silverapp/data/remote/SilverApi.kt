@@ -20,7 +20,40 @@ interface SilverApi {
 
     @POST("api/v1/messages/classify")
     suspend fun classifyMessage(@Body request: ClassifyRequest): ClassifyResponse
+
+    @POST("api/v1/kiosk/guide")
+    suspend fun kioskGuide(@Body request: KioskGuideRequest): KioskGuideResponse
 }
+
+@Serializable
+data class KioskGuideRequest(
+    val sessionId: String? = null,
+    val goal: String,
+    /** base64 JPEG, 긴 변 1024px 이하 */
+    val image: String,
+    val mediaType: String = "image/jpeg",
+    val history: List<KioskHistoryItem> = emptyList(),
+    val userReply: String? = null,
+)
+
+@Serializable
+data class KioskHistoryItem(val speech: String)
+
+@Serializable
+data class KioskGuideResponse(
+    val sessionId: String,
+    val speech: String,
+    /** in_progress | done | need_input | unclear */
+    val status: String,
+    val target: KioskTarget? = null,
+)
+
+@Serializable
+data class KioskTarget(
+    val label: String,
+    /** [x1, y1, x2, y2], 사진 크기 대비 0~1 */
+    val box: List<Float>,
+)
 
 @Serializable
 data class HealthResponse(

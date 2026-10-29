@@ -117,6 +117,7 @@ fun HomeScreen(
     selectedRecordId: String?,
     onOpenRecord: (String) -> Unit,
     onCloseRecord: () -> Unit,
+    onOpenKiosk: () -> Unit,
     vm: HomeViewModel = viewModel(),
 ) {
     val context = LocalContext.current
@@ -154,6 +155,19 @@ fun HomeScreen(
             item {
                 Spacer(Modifier.heightIn(min = 8.dp))
                 Text("실버 도우미", style = MaterialTheme.typography.headlineLarge)
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("키오스크 도우미", style = MaterialTheme.typography.titleLarge)
+                        Text("주문하는 화면을 비추면 무엇을 누를지 알려 드려요.", style = MaterialTheme.typography.bodyLarge)
+                        BigButton("키오스크 도움받기", onOpenKiosk)
+                    }
+                }
             }
 
             item {
