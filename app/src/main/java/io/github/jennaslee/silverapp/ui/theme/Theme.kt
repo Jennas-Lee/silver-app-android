@@ -13,12 +13,24 @@ import androidx.compose.ui.unit.sp
 private val SilverColors = lightColorScheme(
     primary = Color(0xFF1F5FAE),
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFDCE8F8),
+    onPrimaryContainer = Color(0xFF0B2A4D),
+    secondaryContainer = Color(0xFFDCE8F8),
+    onSecondaryContainer = Color(0xFF0B2A4D),
     error = Color(0xFFB3261E),
     onError = Color.White,
+    errorContainer = Color(0xFFFCE4E2),
+    onErrorContainer = Color(0xFF5C1410),
     background = Color.White,
     onBackground = Color(0xFF111111),
     surface = Color.White,
     onSurface = Color(0xFF111111),
+    surfaceVariant = Color(0xFFEEF1F5),
+    onSurfaceVariant = Color(0xFF1F2328),
+    surfaceContainerHighest = Color(0xFFEEF1F5),
+    surfaceContainerHigh = Color(0xFFF2F4F7),
+    surfaceContainer = Color(0xFFF4F6F9),
+    outline = Color(0xFF5F6B7A),
 )
 
 private val SilverTypography = Typography(

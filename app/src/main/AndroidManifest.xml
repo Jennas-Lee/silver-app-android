@@ -2,6 +2,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 경고 알림 (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 보낸 사람이 연락처에 있는지 확인 (선택) -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- 문자 원문 확인. Android 15+는 숫자가 든 문자 알림을 가리므로 필요.
+         구글 플레이 정책상 제한 권한이라 PoC(직접 설치)용. 출시 전에 정책 검토 필요. -->
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
+    <!-- 문자 기능이 없는 기기(태블릿 등)에도 설치는 가능하게 -->
+    <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
         android:allowBackup="false"
@@ -13,11 +22,33 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- 문자 수신: 원문으로 판정 -->
+        <receiver
+            android:name=".guard.SmsReceiver"
+            android:exported="true"
+            android:permission="android.permission.BROADCAST_SMS">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- 문자 지킴이: 카카오톡 판정, 사기 문자 알림 치우기 -->
+        <service
+            android:name=".guard.SmsGuardService"
+            android:exported="true"
+            android:label="@string/guard_service_label"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>
