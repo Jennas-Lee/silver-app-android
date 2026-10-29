@@ -42,17 +42,19 @@ object MessageRules {
 
     // 링크: 프로토콜/www, 또는 "도메인/경로", 또는 사기에 자주 쓰이는 끝자리 도메인.
     // "https:// 주소"처럼 중간에 띄어쓰기를 넣어 숨긴 경우도 잡는다.
+    // 경계는 \b 대신 앞뒤 글자를 직접 확인한다. \b는 JDK/안드로이드 버전에 따라 한글을 다르게 취급해서
+    // "확인bit.ly"처럼 한글 바로 뒤에 붙은 주소를 놓칠 수 있다.
     private val URL = Regex(
-        """(?i)\bhttps?:/\s?/\s?\S+|\bwww\.\S+|\b[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,6}/\S*|""" +
-            """\b[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|net|org|kr|co\.kr|me|do|ly|gl|gd|io|xyz|top|cc|link|site|shop|info|host|cool|guru|su|cn|im|la|at|pe|id|click|online|live|example)\b|""" +
+        """(?i)(?<![a-z0-9_])https?:/\s?/\s?\S+|(?<![a-z0-9_])www\.\S+|(?<![a-z0-9_])[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,6}/\S*|""" +
+            """(?<![a-z0-9_])[a-z0-9-]+(\.[a-z0-9-]+)*\.(com|net|org|kr|co\.kr|me|do|ly|gl|gd|io|xyz|top|cc|link|site|shop|info|host|cool|guru|su|cn|im|la|at|pe|id|click|online|live|example)(?![a-z0-9_])|""" +
             // "nnop.djv3.pet"처럼 짧은 이름 세 마디로 된 주소 (사기 문자에서 흔함)
-            """\b[a-z0-9]{1,8}\.[a-z0-9]{2,8}\.[a-z]{2,6}\b""",
+            """(?<![a-z0-9_])[a-z0-9]{1,8}\.[a-z0-9]{2,8}\.[a-z]{2,6}(?![a-z0-9_])""",
     )
     private val SHORT_URL_HOSTS = listOf(
         "bit.ly", "bit/ly", "me2.do", "han.gl", "vo.la", "url.kr", "t.ly", "tinyurl.com", "goo.gl", "is.gd", "buly.kr",
         "c11.kr", "abit.ly", "t.co", "s.id", "kr.pe", "shorturl.at", "soo.gd", "tsu.im", "naver.me", "tny.im",
     )
-    private val APK = Regex("""(?i)\.apk\b""")
+    private val APK = Regex("""(?i)\.apk(?![a-z0-9_])""")
 
     /** 인증번호만 알려주는 문자: 링크가 없으면 정상으로 본다 */
     private val OTP = Regex("""(인증\s*번호|인증\s*코드|확인\s*코드|verification code|OTP)[^0-9]{0,15}\d{4,8}""", RegexOption.IGNORE_CASE)
@@ -98,9 +100,9 @@ object MessageRules {
         Group(
             "payment_callback", 3,
             patterns = listOf(
-                Regex("""(결제|승인|출고|주문|확인)\s?완료.{0,80}\b0(2|[3-6]\d|70)\s?-?\s?\d{3,4}\s?-?\s?\d{4}"""),
-                Regex("""\b0(2|[3-6]\d|70)\s?-?\s?\d{3,4}\s?-?\s?\d{4}.{0,40}(결제|승인)\s?완료"""),
-                Regex("""본인\s?아닐.{0,30}\b0(2|[3-6]\d|70)\s?-?\s?\d{3,4}"""),
+                Regex("""(결제|승인|출고|주문|확인)\s?완료.{0,80}(?<!\d)0(2|[3-6]\d|70)\s?-?\s?\d{3,4}\s?-?\s?\d{4}"""),
+                Regex("""(?<!\d)0(2|[3-6]\d|70)\s?-?\s?\d{3,4}\s?-?\s?\d{4}.{0,40}(결제|승인)\s?완료"""),
+                Regex("""본인\s?아닐.{0,30}(?<!\d)0(2|[3-6]\d|70)\s?-?\s?\d{3,4}"""),
             ),
         ),
         Group("invitation", 1, listOf("부고", "별세", "청첩장", "모바일 초대장", "돌잔치", "결혼식")),
