@@ -2,6 +2,10 @@ package io.github.jennaslee.silverapp.guard
 
 import io.github.jennaslee.silverapp.guard.IncomingMessage.Source
 import io.github.jennaslee.silverapp.guard.RuleResult.Level
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
@@ -87,6 +91,21 @@ class RulesDatasetEval {
         out.parentFile.mkdirs()
         out.writeText("# 1차 규칙 평가 (${samples.size}건, 중복 제외)\n$report")
         println(out.absolutePath)
+
+        // 서버로 넘어가는 메시지(SUSPICIOUS 이상)를 규칙 결과와 함께 내보낸다.
+        // 백엔드 scripts/eval-messages.mjs 가 이 파일로 실제 흐름과 같은 평가를 한다. 데이터셋 옆에 저장 (저장소 밖).
+        val flagged = File(csv.parentFile, "rules-flagged.jsonl")
+        flagged.writeText(
+            results.filter { it.second.level != Level.SAFE }.joinToString("\n") { (s, r) ->
+                buildJsonObject {
+                    put("content", s.content)
+                    put("smishing", s.smishing)
+                    put("level", r.level.name)
+                    put("hits", JsonArray(r.hits.map { JsonPrimitive(it) }))
+                }.toString()
+            },
+        )
+        println(flagged.absolutePath)
     }
 
     private fun String.oneLine(max: Int) = replace(Regex("\\s+"), " ").take(max)
