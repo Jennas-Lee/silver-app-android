@@ -75,6 +75,14 @@ class MessageRulesTest {
     }
 
     @Test
+    fun `한글 바로 뒤에 붙은 주소와 번호도 잡는다`() {
+        // \b 대신 앞뒤 글자를 직접 확인하도록 바꾼 부분 (안드로이드에서는 \b가 한글을 글자로 취급)
+        assertTrue("short_url" in check("택배 보류 주소확인bit.ly/3xYz").hits)
+        assertTrue(check("주문하신 냉장고 988,000원 결제완료 문의02-318-2714").hits.any { it.startsWith("payment_callback") })
+        assertTrue("apk" in check("검찰청 사건조회 설치파일check.apk를 받으세요").hits)
+    }
+
+    @Test
     fun `통신사 사칭 주의 안내는 서버 판정 전에 경고하지 않는다`() {
         val r = check("[Web발신] [SKT] 정부 기관 및 가족 사칭 문자 주의 안내. 검찰을 사칭하며 신분증, 계좌 비밀번호를 요구하는 문자에 주의하세요.")
         assertTrue(r.level != Level.HIGH_RISK)
