@@ -16,3 +16,7 @@ local.properties
 *.jks
 *.keystore
 google-services.json
+
+# JVM 오류 기록
+hs_err_pid*.log
+replay_pid*.log
