@@ -11,6 +11,19 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <!-- 문자 기능이 없는 기기(태블릿 등)에도 설치는 가능하게 -->
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
+    <!-- 키오스크 도우미: 화면 촬영 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+
+    <!-- Android 11+: 음성 입력 창과 음성 읽기 엔진을 찾을 수 있게 -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 
     <application
         android:allowBackup="false"
