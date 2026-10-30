@@ -2,7 +2,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -20,7 +19,7 @@ val signingStoreFile = System.getenv("SIGNING_STORE_FILE")
 
 android {
     namespace = "io.github.jennaslee.silverapp"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.jennaslee.silverapp"
