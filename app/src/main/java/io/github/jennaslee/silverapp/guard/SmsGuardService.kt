@@ -12,6 +12,7 @@ import android.service.notification.StatusBarNotification
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import io.github.jennaslee.silverapp.session.SessionStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -56,6 +57,7 @@ class SmsGuardService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if (SessionStore.isGuardian) return
         val source = sourceOf(this, sbn.packageName) ?: return
         if (source == IncomingMessage.Source.SMS && hasReceiveSms(this)) return // SmsReceiver가 처리
 

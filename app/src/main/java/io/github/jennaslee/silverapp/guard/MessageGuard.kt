@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import io.github.jennaslee.silverapp.data.remote.ApiClient
 import io.github.jennaslee.silverapp.data.remote.ClassifyRequest
+import io.github.jennaslee.silverapp.session.SessionStore
 import kotlinx.coroutines.withTimeout
 
 /**
@@ -23,6 +24,8 @@ object MessageGuard {
      * @param hideNotification malicious 판정 시 원래 알림을 치우는 방법
      */
     suspend fun process(context: Context, msg: IncomingMessage, hideNotification: suspend () -> Unit) {
+        // 보호자 휴대폰에서는 문자 지킴이를 쓰지 않는다
+        if (SessionStore.isGuardian) return
         GuardStore.init(context)
         if (GuardStore.contains(msg.sender, msg.body)) return
 
@@ -58,6 +61,7 @@ object MessageGuard {
 
         GuardStore.add(record)
         GuardNotifier.notify(context, record)
+        RecordSync.syncSoon()
     }
 
     private fun newRecord(msg: IncomingMessage, action: GuardRecord.Action, category: String, reason: String) =

@@ -21,6 +21,8 @@ data class GuardRecord(
     val action: Action,
     val category: String,
     val reason: String,
+    /** 보호자가 볼 수 있게 서버에 올렸는지 */
+    val uploaded: Boolean = false,
 ) {
     enum class Action {
         /** 서버가 사기로 판정해 알림을 치웠음 */
@@ -63,6 +65,14 @@ object GuardStore {
     fun remove(id: String) {
         save(_records.value.filterNot { it.id == id })
     }
+
+    @Synchronized
+    fun markUploaded(ids: Set<String>) {
+        if (ids.isEmpty()) return
+        save(_records.value.map { if (it.id in ids) it.copy(uploaded = true) else it })
+    }
+
+    fun pendingUploads(): List<GuardRecord> = _records.value.filterNot { it.uploaded }
 
     fun find(id: String): GuardRecord? = _records.value.firstOrNull { it.id == id }
 
