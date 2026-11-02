@@ -4,6 +4,7 @@
 
 - **문자 지킴이:** 사기 문자·카톡 알림을 감지해 알림을 치우고 격리함에 보관
 - **키오스크 도우미:** 카메라로 키오스크 화면을 찍으면 어디를 누를지 음성으로 안내
+- **계정:** 처음 실행할 때 어르신(이름만 입력) / 보호자(이메일·비밀번호)를 고릅니다. 보호자는 어르신 휴대폰에 나온 숫자 6자리로 연결하고, 어르신이 차단한 문자 목록을 봅니다. **보호자 휴대폰에서는 문자 지킴이와 키오스크가 동작하지 않습니다.**
 
 - 백엔드 저장소: [silver-app-backend](https://github.com/Jennas-Lee/silver-app-backend). 두 저장소를 같은 상위 폴더에 나란히 clone하면 편합니다.
   ```
@@ -71,10 +72,15 @@ emulator -avd silver_phone -memory 2048
 
 | 위치 | 내용 |
 |---|---|
-| `MainActivity.kt` | 화면 전환 (홈 ↔ 키오스크 ↔ 기록 상세) |
-| `guard/` | 문자 지킴이. `SmsReceiver`(문자 원문), `SmsGuardService`(알림 감시), `MessageRules`(1차 규칙), `PiiMasker`(개인정보 가림), `MessageGuard`(판정 흐름), `GuardStore`(격리함), `GuardNotifier`(경고 알림) |
+| `MainActivity.kt` | 계정 유형에 따라 화면을 나눔 (처음 실행 / 어르신 홈·키오스크 / 보호자) |
+| `SilverApp.kt` | 앱 시작 시 로그인 정보·격리함 불러오기, 기록 업로드 |
+| `session/SessionStore.kt` | 로그인 정보(토큰, 계정 유형) 저장 |
+| `guard/` | 문자 지킴이. `SmsReceiver`(문자 원문), `SmsGuardService`(알림 감시), `MessageRules`(1차 규칙), `PiiMasker`(개인정보 가림), `MessageGuard`(판정 흐름), `GuardStore`(격리함), `GuardNotifier`(경고 알림), `RecordSync`(차단 기록을 서버에 올려 보호자와 공유) |
 | `kiosk/` | 키오스크 도우미. 카메라(`KioskScreen`), 사진 줄이기(`KioskImage`), 음성(`Speaker`) |
-| `ui/` | 홈, 기록 상세, 테마 |
+| `ui/` | 어르신 홈, 기록 상세, 테마 |
+| `ui/onboarding/` | 처음 실행: 유형 선택, 어르신 시작, 보호자 로그인·가입 |
+| `ui/senior/` | 어르신 홈의 보호자 연결 카드 (숫자 6자리) |
+| `ui/guardian/` | 보호자 화면: 어르신 목록, 차단 문자·보이스피싱 내역 |
 | `data/remote/SilverApi.kt` | Retrofit API와 요청·응답 형식 |
 | `app/src/test/` | 단위 테스트 (`MessageRulesTest`, `PiiMaskerTest` 등) |
 | `gradle/libs.versions.toml` | 라이브러리 버전 |
@@ -89,7 +95,9 @@ emulator -avd silver_phone -memory 2048
   - 숫자 경계: `(?<!\d)` … `(?!\d)`
   - 영문·링크 경계: `(?<![a-z0-9_])` … `(?![a-z0-9_])`
 - `MessageRules`나 `PiiMasker`를 고치면 테스트도 같이 추가합니다. 놓친 예시는 회귀 테스트로 남깁니다.
-- 서버로 문자를 보낼 때는 반드시 `PiiMasker`로 계좌·카드·주민번호 등을 가린 뒤 보냅니다.
+- 서버로 문자를 보낼 때(판정 요청, 기록 업로드 모두)는 반드시 `PiiMasker`로 계좌·카드·주민번호 등을 가린 뒤 보냅니다. 서버의 `src/lib/pii.ts`와 같은 규칙을 유지합니다.
+- **문자 지킴이·키오스크 코드를 고치면** 보호자 계정에서는 동작하지 않는지(`SessionStore.isGuardian`) 확인합니다.
+- 로그인하면 `Authorization: Bearer` 토큰으로, 로그인 전에는 예전 `X-Device-Token`으로 요청합니다(`SilverApi.kt`의 인터셉터). 서버 오류 문구는 `ApiClient.errorMessage()`로 보여 줍니다.
 - 주석은 한국어로, 짧게 씁니다.
 - 설정값(서버 주소, 토큰)은 코드에 박지 않고 `BuildConfig`로 받습니다. 우선순위는 환경변수(CI) > `local.properties` > 기본값입니다.
 
