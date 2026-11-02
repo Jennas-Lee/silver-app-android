@@ -109,9 +109,10 @@ emulator -avd silver_phone -memory 2048
 |---|---|---|
 | `ci.yml` | PR | lint, 단위 테스트, 디버그 빌드 |
 | `build-debug.yml` | `main` push | 디버그 APK를 Actions Artifact로 업로드 |
-| `release.yml` | `v*` 태그 push | 서명된 APK/AAB를 GitHub Release에 업로드 |
+| `release.yml` | 제목이 `Release vX.Y.Z`인 PR merge (또는 태그 push) | 서명된 APK/AAB를 GitHub Release에 업로드 |
 
-GitHub Variables·Secrets(`API_BASE_URL`, `DEVICE_TOKENS`, 키스토어 값)는 사용자가 직접 등록합니다. 에이전트가 값을 쓰거나 읽지 않습니다.
+- 릴리스 PR 제목은 정확히 `Release v1.2.3` 형식이어야 합니다. 이미 있는 버전이면 실패합니다.
+- GitHub Variables·Secrets(`API_BASE_URL`, `DEVICE_TOKENS`, 서명 키)는 사용자가 직접 등록합니다(서명 키는 `scripts/setup-release-signing.sh`). 에이전트가 값을 쓰거나 읽지 않습니다.
 
 ## Git 규칙
 

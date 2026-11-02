@@ -28,20 +28,27 @@
 |---|---|---|
 | `ci.yml` | PR | lint, 단위 테스트, 디버그 빌드 |
 | `build-debug.yml` | `main` push | 디버그 APK를 Actions Artifact로 업로드 |
-| `release.yml` | `v*` 태그 push | 서명된 APK/AAB를 GitHub Release에 업로드 |
+| `release.yml` | 제목이 `Release vX.Y.Z`인 PR merge (또는 `vX.Y.Z` 태그 push) | 서명된 APK/AAB를 GitHub Release에 업로드 |
 
-릴리스는 `git tag v0.1.0 && git push origin v0.1.0`으로 만듭니다. `versionCode`는 Actions 실행 번호로 자동 증가합니다.
+### 릴리스 만들기
+1. 바뀐 내용을 `main`에 모두 merge합니다.
+2. 아무 변경(예: 이 README의 변경 기록)으로 PR을 열고, 제목을 **`Release v0.1.0`** 처럼 씁니다. 대소문자와 띄어쓰기까지 정확해야 합니다.
+3. PR을 merge하면 Actions가 서명된 APK/AAB를 만들어 `v0.1.0` Release와 태그를 자동으로 만듭니다.
 
-**GitHub 설정**
+- 같은 버전이 이미 있으면 실패합니다. 버전 번호를 올려 주세요.
+- `versionName`은 제목의 숫자(`0.1.0`), `versionCode`는 Actions 실행 번호로 자동 증가합니다.
+- 태그를 직접 push해도 됩니다: `git tag v0.1.0 && git push origin v0.1.0`
+
+### GitHub 설정
 - Variables: `API_BASE_URL` (Vercel 프로덕션 주소)
-- Secrets: `DEVICE_TOKENS` (서버 Vercel의 `DEVICE_TOKENS`와 같은 값), `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
+- Secrets: `DEVICE_TOKENS` (서버 Vercel의 `DEVICE_TOKENS` 중 하나), `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
 
-키스토어 만들기:
+### 서명 키 등록 (처음 한 번)
 ```bash
-keytool -genkeypair -v -keystore release.jks -alias silver -keyalg RSA -keysize 2048 -validity 10000
-base64 -w0 release.jks   # 출력값을 KEYSTORE_BASE64에 등록
+bash scripts/setup-release-signing.sh
 ```
-키스토어 파일은 저장소에 올리지 말고 안전한 곳에 따로 보관하세요. 잃어버리면 같은 앱으로 업데이트할 수 없습니다.
+서명 키를 만들어 `~/.silver-app/`에 저장하고, 서명용 Secret 4개를 GitHub에 등록합니다. 비밀번호는 화면에 나오지 않습니다.
+**`~/.silver-app/`의 두 파일은 꼭 따로 백업하세요.** 잃어버리면 이미 설치된 앱을 업데이트할 수 없고, 지우고 새로 설치해야 합니다.
 
 ## 권한
 
