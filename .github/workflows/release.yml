@@ -78,7 +78,7 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "SIGNING_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
 
-      - run: ./gradlew testReleaseUnitTest assembleRelease bundleRelease
+      - run: ./gradlew testDebugUnitTest assembleRelease bundleRelease
 
       - name: Create GitHub Release
         run: |
