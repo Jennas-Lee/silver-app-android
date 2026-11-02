@@ -1,26 +1,66 @@
 name: Release
 
-# v0.1.0 같은 태그를 push하면 서명된 APK/AAB를 만들어 GitHub Release에 올린다
+# 서명된 APK/AAB를 만들어 GitHub Release에 올린다. 두 가지 방법이 있다.
+# 1. 제목이 "Release v1.2.3"인 PR을 main에 merge (추천)
+# 2. v1.2.3 같은 태그를 직접 push
 on:
+  pull_request:
+    types: [closed]
+    branches: [main]
   push:
     tags: ["v*"]
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
+    # merge된 "Release v..." PR, 또는 태그 push일 때만 실행
+    if: >-
+      github.event_name == 'push' ||
+      (github.event.pull_request.merged == true && startsWith(github.event.pull_request.title, 'Release v'))
     runs-on: ubuntu-latest
     env:
-      VERSION_CODE: ${{ github.run_number }}
-      VERSION_NAME: ${{ github.ref_name }}
       API_BASE_URL: ${{ vars.API_BASE_URL }}
       DEVICE_TOKEN: ${{ secrets.DEVICE_TOKENS }}
       SIGNING_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      GH_TOKEN: ${{ github.token }}
     steps:
+      - name: Read version
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            TAG="$GITHUB_REF_NAME"
+            TARGET="$GITHUB_SHA"
+          else
+            TAG="$(printf '%s' "$PR_TITLE" | sed -nE 's/^Release (v[0-9]+\.[0-9]+\.[0-9]+)$/\1/p')"
+            TARGET="${{ github.event.pull_request.merge_commit_sha }}"
+          fi
+          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::버전 형식이 틀렸습니다. PR 제목은 'Release v1.2.3' 형식이어야 합니다. (받은 값: '$PR_TITLE$GITHUB_REF_NAME')"
+            exit 1
+          fi
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::$TAG 릴리스가 이미 있습니다. 버전 번호를 올려 주세요."
+            exit 1
+          fi
+          {
+            echo "TAG=$TAG"
+            echo "TARGET=$TARGET"
+            echo "VERSION_NAME=${TAG#v}"
+            echo "VERSION_CODE=${{ github.run_number }}"
+          } >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TARGET }}
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -31,17 +71,18 @@ jobs:
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$SIGNING_STORE_PASSWORD" ] || [ -z "$SIGNING_KEY_ALIAS" ]; then
+            echo "::error::서명 키 Secret(KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD)이 없습니다. README의 '서명 키 등록'을 참고하세요."
+            exit 1
+          fi
           echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
           echo "SIGNING_STORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
-          echo "VERSION_NAME=${VERSION_NAME#v}" >> "$GITHUB_ENV"
 
       - run: ./gradlew testReleaseUnitTest assembleRelease bundleRelease
 
       - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/silver-app-${GITHUB_REF_NAME}.apk"
-          cp app/build/outputs/bundle/release/app-release.aab "dist/silver-app-${GITHUB_REF_NAME}.aab"
-          gh release create "$GITHUB_REF_NAME" dist/* --generate-notes
+          cp app/build/outputs/apk/release/app-release.apk "dist/silver-app-$TAG.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/silver-app-$TAG.aab"
+          gh release create "$TAG" dist/* --target "$TARGET" --title "$TAG" --generate-notes
