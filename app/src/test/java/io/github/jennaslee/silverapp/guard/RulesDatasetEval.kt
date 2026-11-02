@@ -88,7 +88,7 @@ class RulesDatasetEval {
         }
 
         val out = File("build/reports/rules-eval.txt")
-        out.parentFile.mkdirs()
+        out.parentFile?.mkdirs()
         out.writeText("# 1차 규칙 평가 (${samples.size}건, 중복 제외)\n$report")
         println(out.absolutePath)
 
