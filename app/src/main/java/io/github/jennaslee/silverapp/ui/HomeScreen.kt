@@ -47,6 +47,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.jennaslee.silverapp.data.remote.ApiClient
 import io.github.jennaslee.silverapp.guard.GuardRecord
 import io.github.jennaslee.silverapp.guard.GuardStore
+import io.github.jennaslee.silverapp.guard.RecordSync
+import io.github.jennaslee.silverapp.ui.senior.GuardianLinkCard
 import io.github.jennaslee.silverapp.guard.SmsGuardService
 import io.github.jennaslee.silverapp.guard.categoryLabel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -138,6 +140,7 @@ fun HomeScreen(
             onBack = onCloseRecord,
             onDelete = {
                 GuardStore.remove(selected.id)
+                RecordSync.deleteSoon(selected.id)
                 onCloseRecord()
             },
         )
@@ -169,6 +172,8 @@ fun HomeScreen(
                     }
                 }
             }
+
+            item { GuardianLinkCard() }
 
             item {
                 GuardStatusCard(

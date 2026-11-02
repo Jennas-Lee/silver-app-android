@@ -5,13 +5,23 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import io.github.jennaslee.silverapp.data.remote.LinkedSenior
 import io.github.jennaslee.silverapp.guard.GuardNotifier
-import io.github.jennaslee.silverapp.guard.GuardStore
 import io.github.jennaslee.silverapp.kiosk.KioskScreen
+import io.github.jennaslee.silverapp.session.Session
+import io.github.jennaslee.silverapp.session.SessionStore
 import io.github.jennaslee.silverapp.ui.HomeScreen
+import io.github.jennaslee.silverapp.ui.guardian.GuardianHomeScreen
+import io.github.jennaslee.silverapp.ui.guardian.GuardianViewModel
+import io.github.jennaslee.silverapp.ui.guardian.SeniorDetailScreen
+import io.github.jennaslee.silverapp.ui.onboarding.OnboardingScreen
 import io.github.jennaslee.silverapp.ui.theme.SilverTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,22 +34,27 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        GuardStore.init(this)
         GuardNotifier.ensureChannel(this)
         selectedRecordId = intent.getStringExtra(GuardNotifier.EXTRA_RECORD_ID)
 
         enableEdgeToEdge()
         setContent {
             SilverTheme {
-                if (showKiosk) {
-                    KioskScreen(onClose = { showKiosk = false })
-                } else {
-                    HomeScreen(
-                        selectedRecordId = selectedRecordId,
-                        onOpenRecord = { selectedRecordId = it },
-                        onCloseRecord = { selectedRecordId = null },
-                        onOpenKiosk = { showKiosk = true },
-                    )
+                // 계정 유형에 따라 화면이 나뉜다: 처음 실행 / 어르신 / 보호자
+                val session by SessionStore.session.collectAsStateWithLifecycle()
+                when (session?.role) {
+                    null -> OnboardingScreen()
+                    Session.Role.GUARDIAN -> GuardianApp()
+                    Session.Role.SENIOR -> if (showKiosk) {
+                        KioskScreen(onClose = { showKiosk = false })
+                    } else {
+                        HomeScreen(
+                            selectedRecordId = selectedRecordId,
+                            onOpenRecord = { selectedRecordId = it },
+                            onCloseRecord = { selectedRecordId = null },
+                            onOpenKiosk = { showKiosk = true },
+                        )
+                    }
                 }
             }
         }
@@ -51,5 +66,17 @@ class MainActivity : ComponentActivity() {
             showKiosk = false
             selectedRecordId = it
         }
+    }
+}
+
+/** 보호자 화면: 어르신 목록 ↔ 어르신 상세. 문자 지킴이·키오스크 기능은 없다. */
+@Composable
+private fun GuardianApp(vm: GuardianViewModel = viewModel()) {
+    var openedSenior by remember { mutableStateOf<LinkedSenior?>(null) }
+    val senior = openedSenior
+    if (senior == null) {
+        GuardianHomeScreen(vm, onOpenSenior = { openedSenior = it })
+    } else {
+        SeniorDetailScreen(senior, vm, onBack = { openedSenior = null })
     }
 }
