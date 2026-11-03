@@ -6,6 +6,7 @@ import io.github.jennaslee.silverapp.data.remote.ApiClient
 import io.github.jennaslee.silverapp.data.remote.LinkRequest
 import io.github.jennaslee.silverapp.data.remote.LinkedSenior
 import io.github.jennaslee.silverapp.data.remote.RecordDto
+import io.github.jennaslee.silverapp.data.remote.UrlRecordDto
 import io.github.jennaslee.silverapp.session.SessionStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,9 @@ class GuardianViewModel : ViewModel() {
 
     private val _records = MutableStateFlow<Loadable<List<RecordDto>>>(Loadable.Loading)
     val records: StateFlow<Loadable<List<RecordDto>>> = _records
+
+    private val _urlRecords = MutableStateFlow<Loadable<List<UrlRecordDto>>>(Loadable.Loading)
+    val urlRecords: StateFlow<Loadable<List<UrlRecordDto>>> = _urlRecords
 
     private val _linkResult = MutableStateFlow<String?>(null)
     /** 연결 시도 결과 메시지 (성공·실패 모두) */
@@ -79,6 +83,15 @@ class GuardianViewModel : ViewModel() {
             runCatching { ApiClient.api.seniorRecords(seniorId) }
                 .onSuccess { _records.value = Loadable.Ready(it.records) }
                 .onFailure { _records.value = Loadable.Failed(ApiClient.errorMessage(it)) }
+        }
+    }
+
+    fun loadUrlRecords(seniorId: String) {
+        _urlRecords.value = Loadable.Loading
+        viewModelScope.launch {
+            runCatching { ApiClient.api.seniorUrlRecords(seniorId) }
+                .onSuccess { _urlRecords.value = Loadable.Ready(it.records) }
+                .onFailure { _urlRecords.value = Loadable.Failed(ApiClient.errorMessage(it)) }
         }
     }
 

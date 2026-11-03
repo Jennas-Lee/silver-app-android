@@ -146,6 +146,13 @@ private fun SeniorCard(senior: LinkedSenior, onClick: () -> Unit) {
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (senior.recentCount > 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
             )
+            if (senior.recentUrlCount > 0) {
+                Text(
+                    "최근 7일 동안 위험한 링크 ${senior.recentUrlCount}건",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             senior.lastRecordAt?.let {
                 Text("마지막: ${formatTime(Instant.parse(it).toEpochMilli())}", style = MaterialTheme.typography.bodyMedium)
             }

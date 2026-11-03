@@ -35,21 +35,28 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.jennaslee.silverapp.data.remote.LinkedSenior
 import io.github.jennaslee.silverapp.data.remote.RecordDto
+import io.github.jennaslee.silverapp.data.remote.UrlRecordDto
 import io.github.jennaslee.silverapp.guard.categoryLabel
 import io.github.jennaslee.silverapp.guard.sourceLabel
+import io.github.jennaslee.silverapp.guard.urlCategoryLabel
 import io.github.jennaslee.silverapp.ui.formatTime
 import java.time.Instant
 
-/** 보호자: 어르신 한 분의 차단된 문자 / 보이스피싱 내역 */
+/** 보호자: 어르신 한 분의 차단된 문자 / 막은 링크 / 보이스피싱 내역 */
 @Composable
 fun SeniorDetailScreen(senior: LinkedSenior, vm: GuardianViewModel, onBack: () -> Unit) {
     var tab by remember { mutableIntStateOf(0) }
     var opened by remember { mutableStateOf<RecordDto?>(null) }
+    var openedUrl by remember { mutableStateOf<UrlRecordDto?>(null) }
     var confirmUnlink by remember { mutableStateOf(false) }
     val records by vm.records.collectAsStateWithLifecycle()
+    val urlRecords by vm.urlRecords.collectAsStateWithLifecycle()
 
     BackHandler(onBack = onBack)
-    LaunchedEffect(senior.id) { vm.loadRecords(senior.id) }
+    LaunchedEffect(senior.id) {
+        vm.loadRecords(senior.id)
+        vm.loadUrlRecords(senior.id)
+    }
 
     Scaffold { padding ->
         Column(
@@ -69,11 +76,13 @@ fun SeniorDetailScreen(senior: LinkedSenior, vm: GuardianViewModel, onBack: () -
 
             PrimaryTabRow(selectedTabIndex = tab) {
                 Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("차단된 문자", style = MaterialTheme.typography.bodyLarge) })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("보이스피싱 내역", style = MaterialTheme.typography.bodyLarge) })
+                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("막은 링크", style = MaterialTheme.typography.bodyLarge) })
+                Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("보이스피싱", style = MaterialTheme.typography.bodyLarge) })
             }
 
             when (tab) {
                 0 -> RecordsTab(records, onOpen = { opened = it }, onRetry = { vm.loadRecords(senior.id) })
+                1 -> UrlRecordsTab(urlRecords, onOpen = { openedUrl = it }, onRetry = { vm.loadUrlRecords(senior.id) })
                 else -> Text(
                     "전화 기능이 준비되면, 의심 전화와 통화 뒤 위험한 행동(원격 조종 프로그램 설치 등)을 여기에 보여 드려요.",
                     style = MaterialTheme.typography.bodyLarge,
@@ -84,12 +93,13 @@ fun SeniorDetailScreen(senior: LinkedSenior, vm: GuardianViewModel, onBack: () -
     }
 
     opened?.let { record -> RecordDialog(record) { opened = null } }
+    openedUrl?.let { record -> UrlRecordDialog(record) { openedUrl = null } }
 
     if (confirmUnlink) {
         AlertDialog(
             onDismissRequest = { confirmUnlink = false },
             title = { Text("연결을 끊을까요?") },
-            text = { Text("${senior.name} 님의 차단 문자를 더 이상 볼 수 없어요. 다시 연결하려면 어르신 휴대폰에서 새 숫자를 받아야 해요.") },
+            text = { Text("${senior.name} 님의 차단 문자와 막은 링크를 더 이상 볼 수 없어요. 다시 연결하려면 어르신 휴대폰에서 새 숫자를 받아야 해요.") },
             confirmButton = { TextButton(onClick = { confirmUnlink = false; vm.unlink(senior.id, onBack) }) { Text("연결 끊기") } },
             dismissButton = { TextButton(onClick = { confirmUnlink = false }) { Text("취소") } },
         )
@@ -145,6 +155,65 @@ private fun RecordDialog(record: RecordDto, onDismiss: () -> Unit) {
                 Text(formatTime(Instant.parse(record.receivedAt).toEpochMilli()), style = MaterialTheme.typography.bodyMedium)
                 Text(record.body, style = MaterialTheme.typography.bodyLarge)
                 Text("계좌·카드·주민번호는 가려서 보여 드려요.", style = MaterialTheme.typography.bodyMedium)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("닫기") } },
+    )
+}
+
+@Composable
+private fun UrlRecordsTab(records: Loadable<List<UrlRecordDto>>, onOpen: (UrlRecordDto) -> Unit, onRetry: () -> Unit) {
+    when (records) {
+        Loadable.Loading -> CircularProgressIndicator(modifier = Modifier.padding(20.dp))
+        is Loadable.Failed -> Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(records.message, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+            OutlinedButton(onClick = onRetry) { Text("다시 불러오기") }
+        }
+        is Loadable.Ready -> if (records.value.isEmpty()) {
+            Text(
+                "아직 막은 링크가 없어요. 위험한 링크에 들어가려 하면 여기에 보여 드려요.",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(20.dp),
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item { Text("", modifier = Modifier.heightIn(min = 4.dp)) }
+                items(records.value, key = { it.id }) { record -> UrlRecordRow(record) { onOpen(record) } }
+                item { Text("", modifier = Modifier.heightIn(min = 16.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UrlRecordRow(record: UrlRecordDto, onClick: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(urlCategoryLabel(record.category), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.error)
+                Text(if (record.action == "BLOCKED") "막음" else "경고", style = MaterialTheme.typography.titleLarge)
+            }
+            Text("${record.app} · ${formatTime(Instant.parse(record.visitedAt).toEpochMilli())}", style = MaterialTheme.typography.bodyMedium)
+            Text(record.host.ifEmpty { record.url }, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun UrlRecordDialog(record: UrlRecordDto, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(urlCategoryLabel(record.category)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(record.reason, style = MaterialTheme.typography.bodyLarge)
+                Text("${record.app}에서 열려고 함 · ${if (record.action == "BLOCKED") "자동으로 막음" else "경고만 함"}", style = MaterialTheme.typography.bodyMedium)
+                Text(formatTime(Instant.parse(record.visitedAt).toEpochMilli()), style = MaterialTheme.typography.bodyMedium)
+                Text(record.url, style = MaterialTheme.typography.bodyLarge)
+                Text("주소 뒤쪽의 개인정보는 지우고 보여 드려요.", style = MaterialTheme.typography.bodyMedium)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("닫기") } },
