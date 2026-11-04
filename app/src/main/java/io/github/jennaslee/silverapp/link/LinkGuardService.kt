@@ -11,6 +11,7 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityManager
 import android.view.accessibility.AccessibilityNodeInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import android.accessibilityservice.AccessibilityServiceInfo
 import io.github.jennaslee.silverapp.data.remote.UrlCheckResult
 import io.github.jennaslee.silverapp.guard.GuardNotifier
@@ -35,13 +36,22 @@ class LinkGuardService : AccessibilityService() {
     /** 앱별 마지막 화면(Activity) 이름. 카카오톡 같은 앱에서 인터넷 화면인지 구분한다 */
     private val windowClass = mutableMapOf<String, String>()
 
+    /**
+     * 앱별로 주소창에서 마지막으로 읽은 주소와 시각. 주소창 글자가 바뀔 때 이벤트로 받아 둔다.
+     * 팝업(알림 허용 창, 메뉴, 사이트 경고창)이 위를 덮으면 주소창을 읽을 수 없어서 이 값을 쓴다.
+     */
+    private val lastBar = mutableMapOf<String, Pair<String, Long>>()
+    private var scanScheduled = false
+
     private var lastKey: String? = null
     private var lastKeyAt = 0L
 
-    /** 방금 막은 주소. 뒤로 가기가 한 번에 안 되면 몇 번 더 누른다 */
+    /**
+     * 최근에 막은 주소. 팝업만 닫히고 페이지가 남았거나, 경고 화면을 닫은 뒤 다시 보이면 또 뒤로 간다.
+     */
     private var blockedKey: String? = null
     private var blockedAt = 0L
-    private var backCount = 0
+    private var lastBackAt = 0L
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
@@ -49,30 +59,57 @@ class LinkGuardService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             event.className?.toString()?.let { windowClass[pkg] = it }
         }
-        // 화면이 바뀔 때 이벤트가 몰려 오므로 잠깐 기다렸다가 한 번만 읽는다
-        handler.removeCallbacks(scanRunnable)
-        handler.postDelayed(scanRunnable, SCAN_DELAY_MS)
+        rememberBar(pkg, event.source)
+        // 이벤트가 몰려 오므로 잠깐 모았다가 한 번 읽는다. 이벤트가 계속 와도 미루지 않는다 (팝업이 뜨기 전에 읽도록)
+        if (!scanScheduled) {
+            scanScheduled = true
+            handler.postDelayed(scanRunnable, SCAN_DELAY_MS)
+        }
+    }
+
+    /** 이벤트가 주소창에서 왔으면 그 주소를 기억한다 */
+    private fun rememberBar(pkg: String, source: AccessibilityNodeInfo?) {
+        if (source == null) return
+        val bar = UrlExtractor.urlBarIds(pkg).firstNotNullOfOrNull { id ->
+            if (source.viewIdResourceName == id) source else runCatching { source.findAccessibilityNodeInfosByViewId(id).firstOrNull() }.getOrNull()
+        } ?: return
+        if (bar.isFocused) return
+        val key = bar.text?.toString()?.takeIf(UrlExtractor::looksLikeUrl)?.let(UrlExtractor::cleanKey)
+        if (key == null) lastBar.remove(pkg) else lastBar[pkg] = key to System.currentTimeMillis()
     }
 
     override fun onInterrupt() = Unit
 
     override fun onDestroy() {
         handler.removeCallbacks(scanRunnable)
+        scanScheduled = false
         scope.cancel()
         super.onDestroy()
     }
 
-    /** 지금 화면의 주소를 줄인 형태로. 없으면 null */
+    /**
+     * 지금 화면의 (앱, 줄인 주소). 없으면 null.
+     * 알림 허용 창이나 사이트가 띄운 팝업이 맨 위에 있어도 그 아래 인터넷 창의 주소창을 읽도록
+     * 맨 위 창만이 아니라 화면에 있는 앱 창을 모두 살펴본다.
+     */
     private fun currentKey(): Pair<String, String>? {
-        val root = rootInActiveWindow ?: return null
-        val pkg = root.packageName?.toString() ?: return null
-        if (pkg == packageName) return null
-        val texts = ArrayList<ScreenText>()
-        collect(root, texts, 0)
+        val roots = runCatching {
+            windows.filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }.mapNotNull { it.root }
+        }.getOrDefault(emptyList()).ifEmpty { listOfNotNull(rootInActiveWindow) }
         val height = resources.displayMetrics.heightPixels
-        val url = UrlExtractor.find(pkg, texts, height, UrlExtractor.allowHeuristic(pkg, windowClass[pkg])) ?: return null
-        val key = UrlExtractor.cleanKey(url) ?: return null
-        return pkg to key
+        for (root in roots) {
+            val pkg = root.packageName?.toString() ?: continue
+            if (pkg == packageName) continue
+            val texts = ArrayList<ScreenText>()
+            collect(root, texts, 0)
+            val url = UrlExtractor.find(pkg, texts, height, UrlExtractor.allowHeuristic(pkg, windowClass[pkg])) ?: continue
+            val key = UrlExtractor.cleanKey(url) ?: continue
+            return pkg to key
+        }
+        // 팝업이 덮고 있으면: 같은 앱이 맨 위에 있는 동안은 주소창에서 마지막으로 읽은 주소를 쓴다
+        val top = roots.firstOrNull()?.packageName?.toString() ?: return null
+        val (key, at) = lastBar[top] ?: return null
+        return if (System.currentTimeMillis() - at < BAR_MEMORY_MS) top to key else null
     }
 
     private fun collect(node: AccessibilityNodeInfo, out: MutableList<ScreenText>, depth: Int) {
@@ -88,12 +125,13 @@ class LinkGuardService : AccessibilityService() {
     }
 
     private fun scan() {
+        scanScheduled = false
         val (pkg, key) = currentKey() ?: return
         val now = System.currentTimeMillis()
 
-        if (key == blockedKey && now - blockedAt < REBLOCK_WINDOW_MS) {
-            if (backCount < MAX_BACKS) {
-                backCount++
+        if (key == blockedKey && now - blockedAt < BLOCKED_MEMORY_MS) {
+            if (now - lastBackAt > BACK_INTERVAL_MS) {
+                lastBackAt = now
                 performGlobalAction(GLOBAL_ACTION_BACK)
             }
             return
@@ -117,7 +155,7 @@ class LinkGuardService : AccessibilityService() {
         performGlobalAction(GLOBAL_ACTION_BACK)
         blockedKey = key
         blockedAt = System.currentTimeMillis()
-        backCount = 1
+        lastBackAt = blockedAt
         Log.i(TAG, "위험한 주소를 막음: ${UrlExtractor.hostOf(key)}")
 
         val record = record(pkg, key, result, LinkRecord.Action.BLOCKED)
@@ -149,8 +187,9 @@ class LinkGuardService : AccessibilityService() {
         private const val TAG = "LinkGuard"
         private const val SCAN_DELAY_MS = 350L
         private const val SAME_URL_SKIP_MS = 60_000L
-        private const val REBLOCK_WINDOW_MS = 10_000L
-        private const val MAX_BACKS = 3
+        private const val BAR_MEMORY_MS = 30_000L
+        private const val BLOCKED_MEMORY_MS = 5 * 60_000L
+        private const val BACK_INTERVAL_MS = 1_000L
         private const val WARN_REPEAT_MS = 60 * 60_000L
         private const val MAX_NODES = 400
         private const val MAX_DEPTH = 40

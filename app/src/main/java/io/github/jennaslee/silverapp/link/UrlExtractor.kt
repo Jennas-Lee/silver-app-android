@@ -39,6 +39,9 @@ object UrlExtractor {
         RegexOption.IGNORE_CASE,
     )
 
+    /** 이 앱의 주소창 ID 목록 (예: com.android.chrome:id/url_bar). 모르면 빈 목록 */
+    fun urlBarIds(pkg: String): List<String> = URL_BAR_IDS[pkg].orEmpty().map { "$pkg:id/$it" }
+
     /** 주소처럼 생긴 글자인지 (띄어쓰기 없이 도메인 형태) */
     fun looksLikeUrl(text: String): Boolean {
         val t = text.trim()
@@ -54,7 +57,7 @@ object UrlExtractor {
 
     /** 지금 열린 주소. 없거나 주소를 입력하는 중이면 null */
     fun find(pkg: String, texts: List<ScreenText>, screenHeight: Int, allowHeuristic: Boolean): String? {
-        val ids = URL_BAR_IDS[pkg].orEmpty().map { "$pkg:id/$it" }
+        val ids = urlBarIds(pkg)
         val bar = texts.firstOrNull { it.viewId in ids }
         if (bar != null) {
             if (bar.focused) return null
