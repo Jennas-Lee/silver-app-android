@@ -1,4 +1,6 @@
 <resources>
     <string name="app_name">실버 도우미</string>
     <string name="guard_service_label">실버 도우미 문자 지킴이</string>
+    <string name="link_guard_label">실버 도우미 링크 지킴이</string>
+    <string name="link_guard_description">위험한 인터넷 주소에 들어가면 바로 뒤로 돌아가고 알려 드려요. 크롬, 삼성 인터넷, 네이버, 카카오톡 같은 인터넷 화면의 주소만 확인하고, 다른 화면의 글자는 보지 않아요. 주소가 위험한지 알아보려고 주소의 앞부분만 실버 도우미로 보내요.</string>
 </resources>
