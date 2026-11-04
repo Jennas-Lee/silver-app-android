@@ -78,6 +78,24 @@ interface SilverApi {
         @Query("limit") limit: Int = 50,
         @Query("before") before: String? = null,
     ): RecordsResponse
+
+    // 인터넷 주소 판정과 막은 주소 기록
+
+    @POST("api/v1/urls/check")
+    suspend fun checkUrls(@Body request: UrlCheckRequest): UrlCheckResponse
+
+    @POST("api/v1/url-records")
+    suspend fun uploadUrlRecords(@Body request: UploadUrlRecordsRequest): UploadRecordsResponse
+
+    @DELETE("api/v1/url-records/{id}")
+    suspend fun deleteUrlRecord(@Path("id") id: String): Response<Unit>
+
+    @GET("api/v1/seniors/{id}/url-records")
+    suspend fun seniorUrlRecords(
+        @Path("id") seniorId: String,
+        @Query("limit") limit: Int = 50,
+        @Query("before") before: String? = null,
+    ): UrlRecordsResponse
 }
 
 @Serializable
@@ -176,8 +194,11 @@ data class LinkedSenior(
     val id: String,
     val name: String,
     val linkedAt: String,
-    /** 최근 7일 차단·경고 수 */
+    /** 최근 7일 차단·경고 문자 수 */
     val recentCount: Int = 0,
+    /** 최근 7일 막거나 경고한 인터넷 주소 수 */
+    val recentUrlCount: Int = 0,
+    /** 문자·주소 기록 중 가장 최근 시각 */
     val lastRecordAt: String? = null,
 )
 
@@ -221,6 +242,51 @@ data class UploadRecordsResponse(val received: Int, val saved: Int)
 
 @Serializable
 data class RecordsResponse(val records: List<RecordDto>)
+
+// 인터넷 주소
+
+@Serializable
+data class UrlCheckRequest(val urls: List<String>)
+
+@Serializable
+data class UrlCheckResult(
+    val url: String,
+    val host: String? = null,
+    /** safe | suspicious | malicious | unknown(판정 실패, 막지 않음) */
+    val verdict: String,
+    /** phishing | malware | scam | other | none */
+    val category: String,
+    val reason: String,
+    /** rule | webrisk | model | invalid | error */
+    val source: String,
+    val cached: Boolean = false,
+)
+
+@Serializable
+data class UrlCheckResponse(val results: List<UrlCheckResult>)
+
+@Serializable
+data class UrlRecordDto(
+    val id: String,
+    /** ISO 시각 */
+    val visitedAt: String,
+    /** 서버가 정리한 도메인 (올릴 때는 비워도 됨) */
+    val host: String = "",
+    /** 올릴 때는 연 주소, 받을 때는 ? 뒤를 버리고 개인정보를 가린 주소 */
+    val url: String,
+    /** 주소를 연 곳 (크롬, 카카오톡, QR 등) */
+    val app: String,
+    /** BLOCKED | WARNED */
+    val action: String,
+    val category: String,
+    val reason: String,
+)
+
+@Serializable
+data class UploadUrlRecordsRequest(val records: List<UrlRecordDto>)
+
+@Serializable
+data class UrlRecordsResponse(val records: List<UrlRecordDto>)
 
 object ApiClient {
     val json = Json { ignoreUnknownKeys = true }

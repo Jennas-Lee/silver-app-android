@@ -13,6 +13,14 @@ fun categoryLabel(category: String): String = when (category) {
     else -> "의심 문자"
 }
 
+/** 인터넷 주소 판정 종류 */
+fun urlCategoryLabel(category: String): String = when (category) {
+    "phishing" -> "가짜 사이트"
+    "malware" -> "위험한 프로그램"
+    "scam" -> "사기 사이트"
+    else -> "의심 주소"
+}
+
 fun sourceLabel(source: String): String = when (source) {
     "sms" -> "문자"
     "kakao" -> "카카오톡"
