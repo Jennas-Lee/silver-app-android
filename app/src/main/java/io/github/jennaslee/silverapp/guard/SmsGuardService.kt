@@ -57,7 +57,7 @@ class SmsGuardService : NotificationListenerService() {
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        if (SessionStore.isGuardian) return
+        if (!SessionStore.canUseFeatures) return
         val source = sourceOf(this, sbn.packageName) ?: return
         if (source == IncomingMessage.Source.SMS && hasReceiveSms(this)) return // SmsReceiver가 처리
 

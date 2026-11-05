@@ -24,8 +24,8 @@ object MessageGuard {
      * @param hideNotification malicious 판정 시 원래 알림을 치우는 방법
      */
     suspend fun process(context: Context, msg: IncomingMessage, hideNotification: suspend () -> Unit) {
-        // 보호자 휴대폰에서는 문자 지킴이를 쓰지 않는다
-        if (SessionStore.isGuardian) return
+        // 보호자 휴대폰, 보호자와 연결되지 않은 어르신 휴대폰에서는 쓰지 않는다
+        if (!SessionStore.canUseFeatures) return
         GuardStore.init(context)
         if (GuardStore.contains(msg.sender, msg.body)) return
 

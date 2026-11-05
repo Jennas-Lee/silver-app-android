@@ -33,12 +33,13 @@ object RecordSync {
     private val isSenior: Boolean get() = SessionStore.current?.role == Session.Role.SENIOR
 
     fun syncSoon() {
-        if (!isSenior) return
+        if (!SessionStore.canUseFeatures) return
         scope.launch { sync() }
     }
 
     suspend fun sync() = mutex.withLock {
-        if (!isSenior) return@withLock
+        // 보호자와 연결되지 않았으면 서버가 받지 않는다. 기록은 남겨 두었다가 연결되면 올린다
+        if (!SessionStore.canUseFeatures) return@withLock
         syncLinks()
         val pending = GuardStore.pendingUploads()
         if (pending.isEmpty()) return@withLock

@@ -8,11 +8,10 @@
 ## 로컬 개발
 
 1. Android Studio로 이 폴더를 엽니다 (JDK 17).
-2. `local.properties`에 서버 주소와 토큰을 넣습니다 (커밋되지 않음).
+2. `local.properties`에 서버 주소를 넣습니다 (커밋되지 않음).
    ```properties
    # 에뮬레이터에서 PC의 로컬 백엔드(npm run dev)에 붙을 때
    api.baseUrl=http://10.0.2.2:3000
-   device.token=dev-token-1
    ```
 3. `app`을 실행합니다. 홈 화면에 "서버와 연결됐어요"가 나오면 준비 완료입니다.
 
@@ -41,7 +40,7 @@
 
 ### GitHub 설정
 - Variables: `API_BASE_URL` (Vercel 프로덕션 주소)
-- Secrets: `DEVICE_TOKENS` (서버 Vercel의 `DEVICE_TOKENS` 중 하나), `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
+- Secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`
 
 ### 서명 키 등록 (처음 한 번)
 ```bash

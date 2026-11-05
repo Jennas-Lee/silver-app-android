@@ -161,6 +161,8 @@ data class UserDto(
     val role: String,
     val name: String,
     val email: String? = null,
+    /** 어르신만: 보호자와 연결되어 있는지 (GET /me) */
+    val hasGuardian: Boolean? = null,
 )
 
 @Serializable
@@ -294,12 +296,16 @@ object ApiClient {
     val api: SilverApi by lazy {
         val client = OkHttpClient.Builder()
             .addInterceptor { chain ->
-                // 로그인했으면 계정 토큰, 아니면 예전 방식의 기기 토큰
                 val token = SessionStore.current?.token
                 val request = chain.request().newBuilder().apply {
-                    if (token != null) header("Authorization", "Bearer $token") else header("X-Device-Token", BuildConfig.DEVICE_TOKEN)
+                    if (token != null) header("Authorization", "Bearer $token")
                 }.build()
-                chain.proceed(request)
+                val response = chain.proceed(request)
+                // 보호자 연결이 모두 끊겼으면 서버가 알려 준다 → 연결 화면으로
+                if (response.code == 403 && "guardian_required" in response.peekBody(4096).string()) {
+                    SessionStore.setHasGuardian(false)
+                }
+                response
             }
             .apply {
                 if (BuildConfig.DEBUG) {

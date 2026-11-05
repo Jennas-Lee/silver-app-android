@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       API_BASE_URL: ${{ vars.API_BASE_URL }}
-      DEVICE_TOKEN: ${{ secrets.DEVICE_TOKENS }}
       SIGNING_STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
       SIGNING_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
       SIGNING_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}

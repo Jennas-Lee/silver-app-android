@@ -29,8 +29,6 @@ android {
         versionName = config("VERSION_NAME", "version.name", "0.1.0-dev")
 
         buildConfigField("String", "API_BASE_URL", "\"${config("API_BASE_URL", "api.baseUrl", "http://10.0.2.2:3000")}\"")
-        // PoC용 기기 토큰. 정식 버전에서는 기기 등록 API로 대체한다.
-        buildConfigField("String", "DEVICE_TOKEN", "\"${config("DEVICE_TOKEN", "device.token", "dev-token-1")}\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
