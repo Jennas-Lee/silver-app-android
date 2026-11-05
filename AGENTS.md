@@ -74,12 +74,13 @@ emulator -avd silver_phone -memory 2048
 |---|---|
 | `MainActivity.kt` | 계정 유형에 따라 화면을 나눔 (처음 실행 / 어르신 홈·키오스크 / 보호자) |
 | `SilverApp.kt` | 앱 시작 시 로그인 정보·격리함 불러오기, 기록 업로드 |
+| `link/` | 링크 지킴이. `LinkGuardService`(접근성 서비스, 인터넷 창 주소창 읽기 → 위험하면 뒤로 가기), `UrlExtractor`(주소창 찾기, 단위 시험 있음), `LinkChecker`(서버 판정 + 잠시 기억), `LinkStore`(막은 주소), `LinkBlockedActivity`(경고 화면). 볼 앱 목록은 `res/xml/link_guard_config.xml` |
 | `session/SessionStore.kt` | 로그인 정보(토큰, 계정 유형) 저장 |
 | `guard/` | 문자 지킴이. `SmsReceiver`(문자 원문), `SmsGuardService`(알림 감시), `MessageRules`(1차 규칙), `PiiMasker`(개인정보 가림), `MessageGuard`(판정 흐름), `GuardStore`(격리함), `GuardNotifier`(경고 알림), `RecordSync`(차단 기록을 서버에 올려 보호자와 공유) |
 | `kiosk/` | 키오스크 도우미. 카메라(`KioskScreen`), 사진 줄이기(`KioskImage`), 음성(`Speaker`) |
 | `ui/` | 어르신 홈, 기록 상세, 테마 |
 | `ui/onboarding/` | 처음 실행: 유형 선택, 어르신 시작, 보호자 로그인·가입 |
-| `ui/senior/` | 어르신 홈의 보호자 연결 카드 (숫자 6자리) |
+| `ui/senior/` | 어르신 홈의 보호자 연결 카드 (숫자 6자리), 링크 지킴이 카드 |
 | `ui/guardian/` | 보호자 화면: 어르신 목록, 차단 문자·보이스피싱 내역 |
 | `data/remote/SilverApi.kt` | Retrofit API와 요청·응답 형식 |
 | `app/src/test/` | 단위 테스트 (`MessageRulesTest`, `PiiMaskerTest` 등) |

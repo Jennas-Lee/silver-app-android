@@ -54,6 +54,29 @@
             </intent-filter>
         </receiver>
 
+        <!-- 링크 지킴이: 인터넷 창 주소창을 읽어 위험한 주소면 뒤로 가기.
+             구글 플레이에서는 접근성 기능 사용 신고가 필요해서 PoC(직접 설치)용. -->
+        <service
+            android:name=".link.LinkGuardService"
+            android:exported="true"
+            android:label="@string/link_guard_label"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/link_guard_config" />
+        </service>
+
+        <!-- 위험한 주소를 막은 뒤 보여주는 경고 화면. 최근 앱 목록에 남기지 않는다 -->
+        <activity
+            android:name=".link.LinkBlockedActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:taskAffinity=".linkblocked" />
+
         <!-- 문자 지킴이: 카카오톡 판정, 사기 문자 알림 치우기 -->
         <service
             android:name=".guard.SmsGuardService"

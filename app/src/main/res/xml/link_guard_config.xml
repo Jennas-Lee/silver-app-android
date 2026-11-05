@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 링크 지킴이 설정. packageNames에 적은 인터넷 창 앱의 화면만 받는다. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews|flagRetrieveInteractiveWindows"
+    android:canRetrieveWindowContent="true"
+    android:canPerformGestures="false"
+    android:description="@string/link_guard_description"
+    android:notificationTimeout="300"
+    android:packageNames="com.android.chrome,com.sec.android.app.sbrowser,com.nhn.android.search,com.naver.whale,com.kakao.talk,org.mozilla.firefox,com.microsoft.emmx,com.brave.browser,com.opera.browser,com.duckduckgo.mobile.android,com.google.android.googlequicksearchbox" />

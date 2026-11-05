@@ -49,6 +49,7 @@ import io.github.jennaslee.silverapp.guard.GuardRecord
 import io.github.jennaslee.silverapp.guard.GuardStore
 import io.github.jennaslee.silverapp.guard.RecordSync
 import io.github.jennaslee.silverapp.ui.senior.GuardianLinkCard
+import io.github.jennaslee.silverapp.ui.senior.LinkGuardCard
 import io.github.jennaslee.silverapp.guard.SmsGuardService
 import io.github.jennaslee.silverapp.guard.categoryLabel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -188,6 +189,8 @@ fun HomeScreen(
                     onAllowSms = { requestPermission.launch(Manifest.permission.RECEIVE_SMS) },
                 )
             }
+
+            item { LinkGuardCard() }
 
             item {
                 Text("걸러낸 문자", style = MaterialTheme.typography.headlineMedium)
