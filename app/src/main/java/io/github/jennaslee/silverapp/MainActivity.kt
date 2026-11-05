@@ -25,6 +25,8 @@ import io.github.jennaslee.silverapp.ui.HomeScreen
 import io.github.jennaslee.silverapp.ui.guardian.GuardianHomeScreen
 import io.github.jennaslee.silverapp.ui.guardian.GuardianViewModel
 import io.github.jennaslee.silverapp.ui.guardian.SeniorDetailScreen
+import io.github.jennaslee.silverapp.ui.guardian.SubscriptionScreen
+import io.github.jennaslee.silverapp.ui.guardian.SubscriptionViewModel
 import io.github.jennaslee.silverapp.ui.onboarding.OnboardingScreen
 import io.github.jennaslee.silverapp.ui.senior.LinkRequiredScreen
 import io.github.jennaslee.silverapp.ui.theme.SilverTheme
@@ -55,7 +57,7 @@ class MainActivity : ComponentActivity() {
                     Session.Role.GUARDIAN -> GuardianApp()
                     Session.Role.SENIOR -> if (session?.hasGuardian != true) {
                         LinkRequiredScreen()
-                    } else if (showKiosk) {
+                    } else if (showKiosk && SessionStore.canUseKiosk) {
                         KioskScreen(onClose = { showKiosk = false })
                     } else {
                         HomeScreen(
@@ -77,6 +79,7 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch {
                 runCatching { ApiClient.api.me() }.onSuccess { me ->
                     me.user.hasGuardian?.let(SessionStore::setHasGuardian)
+                    me.user.plan?.let(SessionStore::setPlan)
                 }
             }
         }
@@ -91,14 +94,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-/** 보호자 화면: 어르신 목록 ↔ 어르신 상세. 문자 지킴이·키오스크 기능은 없다. */
+/** 보호자 화면: 어르신 목록 ↔ 어르신 상세, 구독. 문자 지킴이·키오스크 기능은 없다. 구독은 보호자 화면에서만 한다. */
 @Composable
-private fun GuardianApp(vm: GuardianViewModel = viewModel()) {
+private fun GuardianApp(vm: GuardianViewModel = viewModel(), subscription: SubscriptionViewModel = viewModel()) {
     var openedSenior by remember { mutableStateOf<LinkedSenior?>(null) }
+    var showSubscription by remember { mutableStateOf(false) }
     val senior = openedSenior
-    if (senior == null) {
-        GuardianHomeScreen(vm, onOpenSenior = { openedSenior = it })
-    } else {
-        SeniorDetailScreen(senior, vm, onBack = { openedSenior = null })
+    when {
+        showSubscription -> SubscriptionScreen(subscription, onBack = { showSubscription = false; subscription.clearMessage() })
+        senior != null -> SeniorDetailScreen(senior, vm, onBack = { openedSenior = null })
+        else -> GuardianHomeScreen(
+            vm,
+            subscription,
+            onOpenSenior = { openedSenior = it },
+            onOpenSubscription = { showSubscription = true },
+        )
     }
 }

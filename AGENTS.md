@@ -80,7 +80,7 @@ emulator -avd silver_phone -memory 2048
 | `ui/` | 어르신 홈, 기록 상세, 테마 |
 | `ui/onboarding/` | 처음 실행: 유형 선택, 어르신 시작, 보호자 로그인·가입 |
 | `ui/senior/` | 보호자 연결 화면(`LinkRequiredScreen`, 연결 전에는 이 화면만 보임), 어르신 홈의 보호자 연결 카드 (숫자 6자리), 링크 지킴이 카드 |
-| `ui/guardian/` | 보호자 화면: 어르신 목록, 차단 문자·보이스피싱 내역 |
+| `ui/guardian/` | 보호자 화면: 어르신 목록, 차단 문자·보이스피싱 내역, 구독 플랜 고르기(`SubscriptionScreen`, 아직 결제 없음) |
 | `data/remote/SilverApi.kt` | Retrofit API와 요청·응답 형식 |
 | `app/src/test/` | 단위 테스트 (`MessageRulesTest`, `PiiMaskerTest` 등) |
 | `gradle/libs.versions.toml` | 라이브러리 버전 |
