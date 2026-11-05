@@ -20,7 +20,7 @@ class SmsReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != Telephony.Sms.Intents.SMS_RECEIVED_ACTION) return
-        if (SessionStore.isGuardian) return
+        if (!SessionStore.canUseFeatures) return
         val parts = Telephony.Sms.Intents.getMessagesFromIntent(intent) ?: return
         val receivedAt = System.currentTimeMillis()
 

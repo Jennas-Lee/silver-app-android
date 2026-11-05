@@ -55,7 +55,7 @@ class LinkGuardService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        if (pkg == packageName || SessionStore.isGuardian) return
+        if (pkg == packageName || !SessionStore.canUseFeatures) return
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
             event.className?.toString()?.let { windowClass[pkg] = it }
         }

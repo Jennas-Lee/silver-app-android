@@ -14,6 +14,8 @@ data class Session(
     val role: Role,
     val name: String,
     val email: String?,
+    /** 어르신: 보호자와 연결되어 있는지. 연결 전에는 연결 화면만 쓸 수 있다 */
+    val hasGuardian: Boolean = false,
 ) {
     enum class Role { SENIOR, GUARDIAN }
 }
@@ -32,6 +34,9 @@ object SessionStore {
     val current: Session? get() = _session.value
     val isGuardian: Boolean get() = _session.value?.role == Session.Role.GUARDIAN
 
+    /** 어르신 기능(문자 지킴이, 링크 지킴이, 키오스크)을 써도 되는지: 보호자와 연결된 어르신만 */
+    val canUseFeatures: Boolean get() = _session.value?.let { it.role == Session.Role.SENIOR && it.hasGuardian } == true
+
     @Synchronized
     fun init(context: Context) {
         if (prefs != null) return
@@ -41,7 +46,10 @@ object SessionStore {
         val userId = p.getString("userId", null)
         val role = p.getString("role", null)?.let { runCatching { Session.Role.valueOf(it) }.getOrNull() }
         if (token != null && userId != null && role != null) {
-            _session.value = Session(token, userId, role, p.getString("name", "").orEmpty(), p.getString("email", null))
+            _session.value = Session(
+                token, userId, role, p.getString("name", "").orEmpty(), p.getString("email", null),
+                hasGuardian = p.getBoolean("hasGuardian", false),
+            )
         }
     }
 
@@ -52,6 +60,7 @@ object SessionStore {
             role = if (user.role == "guardian") Session.Role.GUARDIAN else Session.Role.SENIOR,
             name = user.name,
             email = user.email,
+            hasGuardian = user.hasGuardian ?: false,
         )
         prefs?.edit {
             putString("token", session.token)
@@ -59,8 +68,17 @@ object SessionStore {
             putString("role", session.role.name)
             putString("name", session.name)
             putString("email", session.email)
+            putBoolean("hasGuardian", session.hasGuardian)
         }
         _session.value = session
+    }
+
+    /** 서버에서 확인한 보호자 연결 여부를 반영한다 (연결되면 첫 화면이 열리고, 모두 끊기면 다시 잠긴다) */
+    fun setHasGuardian(value: Boolean) {
+        val s = _session.value ?: return
+        if (s.role != Session.Role.SENIOR || s.hasGuardian == value) return
+        prefs?.edit { putBoolean("hasGuardian", value) }
+        _session.value = s.copy(hasGuardian = value)
     }
 
     fun clear() {

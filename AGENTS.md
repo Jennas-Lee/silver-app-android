@@ -30,9 +30,8 @@
    sdk.dir=C\:/Users/<사용자>/AppData/Local/Android/Sdk
    # 에뮬레이터에서 PC의 로컬 백엔드(npm run dev)를 쓸 때. 배포된 서버를 쓰려면 Vercel 주소(https://...)를 넣습니다.
    api.baseUrl=http://10.0.2.2:3000
-   device.token=dev-token-1
    ```
-   `device.token`은 서버의 `DEVICE_TOKENS` 중 하나와 같아야 합니다. 배포 서버용 토큰은 저장소 주인에게 받고, **대화창에 붙여넣거나 출력하지 않습니다.**
+   앱은 로그인 토큰으로만 서버를 씁니다. 어르신 계정은 보호자와 연결해야 기능이 열립니다.
 4. 빌드가 되는지 확인합니다.
    ```bash
    ./gradlew assembleDebug        # Windows: gradlew.bat assembleDebug
@@ -80,7 +79,7 @@ emulator -avd silver_phone -memory 2048
 | `kiosk/` | 키오스크 도우미. 카메라(`KioskScreen`), 사진 줄이기(`KioskImage`), 음성(`Speaker`) |
 | `ui/` | 어르신 홈, 기록 상세, 테마 |
 | `ui/onboarding/` | 처음 실행: 유형 선택, 어르신 시작, 보호자 로그인·가입 |
-| `ui/senior/` | 어르신 홈의 보호자 연결 카드 (숫자 6자리), 링크 지킴이 카드 |
+| `ui/senior/` | 보호자 연결 화면(`LinkRequiredScreen`, 연결 전에는 이 화면만 보임), 어르신 홈의 보호자 연결 카드 (숫자 6자리), 링크 지킴이 카드 |
 | `ui/guardian/` | 보호자 화면: 어르신 목록, 차단 문자·보이스피싱 내역 |
 | `data/remote/SilverApi.kt` | Retrofit API와 요청·응답 형식 |
 | `app/src/test/` | 단위 테스트 (`MessageRulesTest`, `PiiMaskerTest` 등) |
@@ -121,7 +120,7 @@ emulator -avd silver_phone -memory 2048
 | `release.yml` | 제목이 `Release vX.Y.Z`인 PR merge (또는 태그 push) | 서명된 APK/AAB를 GitHub Release에 업로드 |
 
 - 릴리스 PR 제목은 정확히 `Release v1.2.3` 형식이어야 합니다. 이미 있는 버전이면 실패합니다.
-- GitHub Variables·Secrets(`API_BASE_URL`, `DEVICE_TOKENS`, 서명 키)는 사용자가 직접 등록합니다(서명 키는 `scripts/setup-release-signing.sh`). 에이전트가 값을 쓰거나 읽지 않습니다.
+- GitHub Variables·Secrets(`API_BASE_URL`, 서명 키)는 사용자가 직접 등록합니다(서명 키는 `scripts/setup-release-signing.sh`). 에이전트가 값을 쓰거나 읽지 않습니다.
 
 ## Git 규칙
 

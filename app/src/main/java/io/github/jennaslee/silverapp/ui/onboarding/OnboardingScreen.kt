@@ -138,7 +138,7 @@ private fun SeniorStart(busy: Boolean, onStart: (String) -> Unit) {
     BigTextField(value = name, onValueChange = { name = it }, label = "성함")
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
         Text(
-            "가족을 보호자로 연결하면, 걸러낸 사기 문자를 가족도 볼 수 있어요. 계좌번호나 주민번호는 가려서 보여 드려요.",
+            "다음 화면에서 가족을 보호자로 연결해야 쓸 수 있어요. 걸러낸 사기 문자는 가족도 함께 봐요. 계좌번호나 주민번호는 가려서 보여 드려요.",
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(16.dp),
         )

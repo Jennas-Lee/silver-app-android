@@ -24,6 +24,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.jennaslee.silverapp.data.remote.ApiClient
 import io.github.jennaslee.silverapp.data.remote.LinkedGuardian
+import io.github.jennaslee.silverapp.session.SessionStore
 import io.github.jennaslee.silverapp.ui.BigButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -50,6 +51,8 @@ class GuardianLinkViewModel : ViewModel() {
                 .onSuccess {
                     val before = _guardians.value.size
                     _guardians.value = it.guardians.orEmpty()
+                    // 연결되면 첫 화면이 열리고, 보호자가 모두 끊으면 다시 연결 화면으로 간다
+                    SessionStore.setHasGuardian(_guardians.value.isNotEmpty())
                     // 새 보호자가 연결되면 코드는 다 쓴 것이므로 닫는다
                     if (_guardians.value.size > before) _code.value = null
                 }
@@ -78,16 +81,7 @@ fun GuardianLinkCard(vm: GuardianLinkViewModel = viewModel()) {
     val error by vm.error.collectAsStateWithLifecycle()
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.refresh() }
-
-    // 코드를 보여주는 동안 연결되었는지 확인하고, 시간이 지나면 닫는다
-    LaunchedEffect(code) {
-        val c = code ?: return@LaunchedEffect
-        while (Instant.now().isBefore(c.expiresAt)) {
-            delay(5_000)
-            vm.refresh()
-        }
-        vm.closeCode()
-    }
+    WatchLinkCode(vm, code)
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -103,21 +97,42 @@ fun GuardianLinkCard(vm: GuardianLinkViewModel = viewModel()) {
 
             val c = code
             if (c != null) {
-                Text("가족 휴대폰의 실버 도우미에 이 숫자를 넣어 주세요.", style = MaterialTheme.typography.bodyLarge)
-                Text(
-                    c.code.chunked(3).joinToString(" "),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 4.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                val minutes = Duration.between(Instant.now(), c.expiresAt).toMinutes().coerceAtLeast(1)
-                Text("${minutes}분 안에 넣어 주세요.", style = MaterialTheme.typography.bodyMedium)
+                LinkCodeBox(c)
             } else {
                 BigButton(if (guardians.isEmpty()) "보호자 연결하기" else "가족 더 연결하기", vm::requestCode)
             }
             error?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error) }
         }
+    }
+}
+
+/** 코드를 보여주는 동안 몇 초마다 연결되었는지 확인하고, 시간이 지나면 닫는다 */
+@Composable
+fun WatchLinkCode(vm: GuardianLinkViewModel, code: LinkCodeUi?) {
+    LaunchedEffect(code) {
+        val c = code ?: return@LaunchedEffect
+        while (Instant.now().isBefore(c.expiresAt)) {
+            delay(5_000)
+            vm.refresh()
+        }
+        vm.closeCode()
+    }
+}
+
+/** 연결 숫자를 크게 보여준다 */
+@Composable
+fun LinkCodeBox(code: LinkCodeUi) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("가족 휴대폰의 실버 도우미에 이 숫자를 넣어 주세요.", style = MaterialTheme.typography.bodyLarge)
+        Text(
+            code.code.chunked(3).joinToString(" "),
+            fontSize = 56.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 4.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        val minutes = Duration.between(Instant.now(), code.expiresAt).toMinutes().coerceAtLeast(1)
+        Text("${minutes}분 안에 넣어 주세요.", style = MaterialTheme.typography.bodyMedium)
     }
 }
