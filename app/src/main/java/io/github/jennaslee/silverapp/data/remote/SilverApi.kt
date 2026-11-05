@@ -17,6 +17,7 @@ import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 import retrofit2.http.Query
 import java.io.IOException
@@ -63,6 +64,14 @@ interface SilverApi {
 
     @DELETE("api/v1/links/{userId}")
     suspend fun unlink(@Path("userId") userId: String): Response<Unit>
+
+    // 구독 (보호자)
+
+    @GET("api/v1/subscription")
+    suspend fun subscription(): SubscriptionDto
+
+    @PUT("api/v1/subscription")
+    suspend fun setSubscription(@Body request: SetPlanRequest): SubscriptionDto
 
     // 차단 기록
 
@@ -164,6 +173,13 @@ data class UserDto(
     /** 어르신만: 보호자와 연결되어 있는지 (GET /me) */
     val hasGuardian: Boolean? = null,
 )
+
+/** 구독 플랜. plan: none | standard | premium */
+@Serializable
+data class SubscriptionDto(val plan: String, val updatedAt: String? = null)
+
+@Serializable
+data class SetPlanRequest(val plan: String)
 
 @Serializable
 data class AuthResponse(val token: String, val user: UserDto)

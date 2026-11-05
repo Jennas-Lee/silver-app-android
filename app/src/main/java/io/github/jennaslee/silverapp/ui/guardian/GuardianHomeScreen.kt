@@ -41,14 +41,23 @@ import java.time.Instant
 
 /** 보호자 홈: 연결한 어르신 목록. 문자 지킴이·키오스크 기능은 없다. */
 @Composable
-fun GuardianHomeScreen(vm: GuardianViewModel, onOpenSenior: (LinkedSenior) -> Unit) {
+fun GuardianHomeScreen(
+    vm: GuardianViewModel,
+    subscription: SubscriptionViewModel,
+    onOpenSenior: (LinkedSenior) -> Unit,
+    onOpenSubscription: () -> Unit,
+) {
     val seniors by vm.seniors.collectAsStateWithLifecycle()
     val linkResult by vm.linkResult.collectAsStateWithLifecycle()
     val linking by vm.linking.collectAsStateWithLifecycle()
+    val plan by subscription.plan.collectAsStateWithLifecycle()
     var addingSenior by remember { mutableStateOf(false) }
     val name = SessionStore.current?.name.orEmpty()
 
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.loadSeniors() }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        vm.loadSeniors()
+        subscription.load()
+    }
 
     Scaffold { padding ->
         LazyColumn(
@@ -67,6 +76,30 @@ fun GuardianHomeScreen(vm: GuardianViewModel, onOpenSenior: (LinkedSenior) -> Un
                     }
                     TextButton(onClick = vm::logout, modifier = Modifier.heightIn(min = 48.dp)) {
                         Text("로그아웃", style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+
+            item {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenSubscription),
+                ) {
+                    Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("구독", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                when (val p = plan) {
+                                    is Loadable.Ready -> "지금 플랜: ${p.value.label}"
+                                    is Loadable.Failed -> "플랜을 불러오지 못했어요"
+                                    Loadable.Loading -> "불러오는 중…"
+                                },
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                        }
+                        OutlinedButton(onClick = onOpenSubscription, modifier = Modifier.heightIn(min = 48.dp)) { Text("구독 관리") }
                     }
                 }
             }
