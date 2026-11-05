@@ -51,6 +51,7 @@ import io.github.jennaslee.silverapp.guard.RecordSync
 import io.github.jennaslee.silverapp.ui.senior.GuardianLinkCard
 import io.github.jennaslee.silverapp.ui.senior.LinkGuardCard
 import io.github.jennaslee.silverapp.guard.SmsGuardService
+import io.github.jennaslee.silverapp.session.SessionStore
 import io.github.jennaslee.silverapp.guard.categoryLabel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -126,6 +127,8 @@ fun HomeScreen(
     val context = LocalContext.current
     val server by vm.server.collectAsStateWithLifecycle()
     val records by GuardStore.records.collectAsStateWithLifecycle()
+    val session by SessionStore.session.collectAsStateWithLifecycle()
+    val kioskOn = session?.plan in setOf("standard", "premium")
     var permissions by remember { mutableStateOf(readPermissions(context)) }
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { permissions = readPermissions(context) }
@@ -169,7 +172,15 @@ fun HomeScreen(
                     Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Text("키오스크 도우미", style = MaterialTheme.typography.titleLarge)
                         Text("주문하는 화면을 비추면 무엇을 누를지 알려 드려요.", style = MaterialTheme.typography.bodyLarge)
-                        BigButton("키오스크 도움받기", onOpenKiosk)
+                        if (kioskOn) {
+                            BigButton("키오스크 도움받기", onOpenKiosk)
+                        } else {
+                            Text(
+                                "가족이 구독하면 쓸 수 있어요. 가족에게 부탁해 보세요.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }

@@ -172,11 +172,23 @@ data class UserDto(
     val email: String? = null,
     /** 어르신만: 보호자와 연결되어 있는지 (GET /me) */
     val hasGuardian: Boolean? = null,
+    /** 보호자: 자기 구독 플랜, 어르신: 가족이 함께 쓰는 플랜 (none | standard | premium) */
+    val plan: String? = null,
+    /** 어르신만: 구독한 보호자 이름 */
+    val planPayer: String? = null,
 )
 
 /** 구독 플랜. plan: none | standard | premium */
 @Serializable
-data class SubscriptionDto(val plan: String, val updatedAt: String? = null)
+data class SubscriptionDto(
+    val plan: String,
+    val updatedAt: String? = null,
+    /** 같은 어르신에 연결된 다른 보호자가 구독 중이면 그 사람과 플랜 (함께 씀, 따로 구독 못 함) */
+    val sharedFrom: SharedPlanDto? = null,
+)
+
+@Serializable
+data class SharedPlanDto(val name: String, val plan: String)
 
 @Serializable
 data class SetPlanRequest(val plan: String)
@@ -318,8 +330,11 @@ object ApiClient {
                 }.build()
                 val response = chain.proceed(request)
                 // 보호자 연결이 모두 끊겼으면 서버가 알려 준다 → 연결 화면으로
-                if (response.code == 403 && "guardian_required" in response.peekBody(4096).string()) {
-                    SessionStore.setHasGuardian(false)
+                if (response.code == 403) {
+                    val body = response.peekBody(4096).string()
+                    if ("guardian_required" in body) SessionStore.setHasGuardian(false)
+                    // 가족이 구독을 해지했으면 키오스크 도우미를 닫는다
+                    if ("plan_required" in body) SessionStore.setPlan("none")
                 }
                 response
             }

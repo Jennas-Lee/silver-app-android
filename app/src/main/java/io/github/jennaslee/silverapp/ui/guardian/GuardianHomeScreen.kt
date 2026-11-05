@@ -92,7 +92,10 @@ fun GuardianHomeScreen(
                             Text("구독", style = MaterialTheme.typography.titleLarge)
                             Text(
                                 when (val p = plan) {
-                                    is Loadable.Ready -> "지금 플랜: ${p.value.label}"
+                                    is Loadable.Ready -> p.value.shared
+                                        ?.takeIf { p.value.effective != p.value.mine }
+                                        ?.let { "지금 플랜: ${p.value.effective.label} (${it.name} 님 구독)" }
+                                        ?: "지금 플랜: ${p.value.effective.label}"
                                     is Loadable.Failed -> "플랜을 불러오지 못했어요"
                                     Loadable.Loading -> "불러오는 중…"
                                 },

@@ -28,16 +28,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import io.github.jennaslee.silverapp.data.remote.ApiClient
 import io.github.jennaslee.silverapp.data.remote.SetPlanRequest
+import io.github.jennaslee.silverapp.data.remote.SharedPlanDto
 import io.github.jennaslee.silverapp.ui.BigButton
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /** 구독 플랜 (서버 값: none | standard | premium) */
-enum class Plan(val id: String, val label: String) {
-    NONE("none", "없음"),
-    STANDARD("standard", "Standard"),
-    PREMIUM("premium", "Premium"),
+enum class Plan(val id: String, val label: String, val features: String) {
+    NONE("none", "없음", "문자 지킴이, 링크 지킴이"),
+    STANDARD("standard", "Standard", "문자 지킴이, 링크 지킴이, 키오스크 도우미"),
+    PREMIUM("premium", "Premium", "Standard의 모든 기능"),
     ;
 
     companion object {
@@ -45,9 +46,15 @@ enum class Plan(val id: String, val label: String) {
     }
 }
 
+/** 내 플랜과, 다른 보호자가 구독해서 함께 쓰는 플랜 */
+data class PlanState(val mine: Plan, val shared: SharedPlanDto?) {
+    /** 실제로 쓰는 플랜 */
+    val effective: Plan get() = shared?.let { Plan.of(it.plan) }?.takeIf { it.ordinal > mine.ordinal } ?: mine
+}
+
 class SubscriptionViewModel : ViewModel() {
-    private val _plan = MutableStateFlow<Loadable<Plan>>(Loadable.Loading)
-    val plan: StateFlow<Loadable<Plan>> = _plan
+    private val _plan = MutableStateFlow<Loadable<PlanState>>(Loadable.Loading)
+    val plan: StateFlow<Loadable<PlanState>> = _plan
 
     /** 바꾸는 중인 플랜 */
     private val _saving = MutableStateFlow<Plan?>(null)
@@ -60,7 +67,7 @@ class SubscriptionViewModel : ViewModel() {
         viewModelScope.launch {
             if (_plan.value !is Loadable.Ready) _plan.value = Loadable.Loading
             runCatching { ApiClient.api.subscription() }
-                .onSuccess { _plan.value = Loadable.Ready(Plan.of(it.plan)) }
+                .onSuccess { _plan.value = Loadable.Ready(PlanState(Plan.of(it.plan), it.sharedFrom)) }
                 .onFailure { _plan.value = Loadable.Failed(ApiClient.errorMessage(it)) }
         }
     }
@@ -73,7 +80,7 @@ class SubscriptionViewModel : ViewModel() {
             runCatching { ApiClient.api.setSubscription(SetPlanRequest(plan.id)) }
                 .onSuccess {
                     val now = Plan.of(it.plan)
-                    _plan.value = Loadable.Ready(now)
+                    _plan.value = Loadable.Ready(PlanState(now, it.sharedFrom))
                     _message.value = if (now == Plan.NONE) "구독을 해지했어요." else "${now.label} 플랜으로 바꿨어요."
                 }
                 .onFailure { _message.value = ApiClient.errorMessage(it) }
@@ -117,11 +124,24 @@ fun SubscriptionScreen(vm: SubscriptionViewModel, onBack: () -> Unit) {
                     OutlinedButton(onClick = vm::load) { Text("다시 불러오기") }
                 }
                 is Loadable.Ready -> {
-                    Text("지금 플랜: ${p.value.label}", style = MaterialTheme.typography.titleLarge)
+                    val state = p.value
+                    Text("지금 플랜: ${state.effective.label}", style = MaterialTheme.typography.titleLarge)
+                    val shared = state.shared
+                    if (shared != null) {
+                        Text(
+                            "${shared.name} 님이 구독한 ${Plan.of(shared.plan).label} 플랜을 함께 쓰고 있어요.\n" +
+                                "한 가족은 한 분만 구독하면 돼요.",
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    } else {
+                        Text("한 분이 구독하면 같은 어르신에 연결된 가족 모두 함께 써요.", style = MaterialTheme.typography.bodyMedium)
+                    }
                     Plan.entries.forEach { option ->
                         PlanCard(
                             plan = option,
-                            current = option == p.value,
+                            current = option == state.mine,
+                            // 다른 가족이 구독 중이면 따로 구독할 수 없다 (해지는 가능)
+                            locked = shared != null && option != Plan.NONE,
                             saving = saving == option,
                             onChoose = { vm.choose(option) },
                         )
@@ -135,7 +155,7 @@ fun SubscriptionScreen(vm: SubscriptionViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun PlanCard(plan: Plan, current: Boolean, saving: Boolean, onChoose: () -> Unit) {
+private fun PlanCard(plan: Plan, current: Boolean, locked: Boolean, saving: Boolean, onChoose: () -> Unit) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (current) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
@@ -144,8 +164,11 @@ private fun PlanCard(plan: Plan, current: Boolean, saving: Boolean, onChoose: ()
     ) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(plan.label, style = MaterialTheme.typography.titleLarge)
+            Text(plan.features, style = MaterialTheme.typography.bodyMedium)
             if (current) {
-                Text("지금 쓰는 플랜이에요", style = MaterialTheme.typography.bodyLarge)
+                Text("지금 내 플랜이에요", style = MaterialTheme.typography.bodyLarge)
+            } else if (locked) {
+                Text("다른 가족이 구독 중이라 고를 수 없어요", style = MaterialTheme.typography.bodyMedium)
             } else {
                 val label = when {
                     saving -> "바꾸는 중…"

@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
                     Session.Role.GUARDIAN -> GuardianApp()
                     Session.Role.SENIOR -> if (session?.hasGuardian != true) {
                         LinkRequiredScreen()
-                    } else if (showKiosk) {
+                    } else if (showKiosk && SessionStore.canUseKiosk) {
                         KioskScreen(onClose = { showKiosk = false })
                     } else {
                         HomeScreen(
@@ -79,6 +79,7 @@ class MainActivity : ComponentActivity() {
             lifecycleScope.launch {
                 runCatching { ApiClient.api.me() }.onSuccess { me ->
                     me.user.hasGuardian?.let(SessionStore::setHasGuardian)
+                    me.user.plan?.let(SessionStore::setPlan)
                 }
             }
         }
