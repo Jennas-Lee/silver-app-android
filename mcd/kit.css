@@ -1,0 +1,178 @@
+/* 맥도날드: 빨강 · 노랑 · 짙은 회색, 왼쪽 세로 종류.
+   글꼴: 컴퓨터에 Speedee가 설치돼 있으면 그것을 쓰고, 없으면 Pretendard를 쓴다. */
+:root {
+  --red: #db0007;
+  --red-dark: #b30006;
+  --yellow: #ffbc0d;
+  --yellow-soft: #fff4d1;
+  --ink: #292929;
+  --ink-2: #6f6f6f;
+  --line: #e5e5e5;
+  --bg: #f4f4f4;
+  --r: 16px;
+  --shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+}
+
+html,
+body {
+  font-family: "Speedee", "Speedee K", "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+}
+
+/* 로고: 골든 아치만 */
+.logo-mark {
+  background: none;
+  border-radius: 0;
+  padding: 0;
+  width: 84px;
+  height: 84px;
+}
+.logo-text {
+  display: none;
+}
+.logo.big .logo-mark {
+  width: 200px;
+  height: 200px;
+}
+
+/* 시작 화면 */
+.start {
+  background: linear-gradient(180deg, var(--red) 0 1000px, #fff 1000px);
+}
+.start-top {
+  display: flex;
+  justify-content: center;
+  padding-top: 48px;
+}
+.start-hero {
+  margin-top: 24px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 50% 42%, #ffd34d 0 36%, var(--yellow) 37% 100%);
+}
+.hero-badge {
+  background: var(--ink);
+}
+.hero-sub {
+  color: var(--red);
+}
+.start-ask h2 {
+  font-weight: 800;
+}
+.dine-btn {
+  border-radius: 20px;
+  border: 3px solid var(--line);
+  box-shadow: none;
+}
+.dine-btn:hover,
+.dine-btn:active {
+  border-color: var(--yellow);
+}
+.dine-btn small {
+  font-size: 28px;
+  letter-spacing: 0.5px;
+}
+.lang.on {
+  background: var(--ink);
+}
+
+/* 머리: 흰 바탕에 아치 */
+.top {
+  background: #fff;
+  border-bottom: 2px solid var(--line);
+}
+.top .logo-mark {
+  width: 64px;
+  height: 64px;
+}
+.dine-chip {
+  background: var(--bg);
+  border: 0;
+  color: var(--ink);
+}
+
+/* 왼쪽 종류: 작게, 고른 것은 노란 막대 */
+.rail {
+  width: 200px;
+  background: var(--bg);
+  border-right: 0;
+  padding: 12px 0;
+  gap: 2px;
+}
+.rail-btn {
+  border-radius: 0;
+  padding: 10px 6px 12px;
+  font-size: 24px;
+  font-weight: 700;
+  gap: 2px;
+  border-left: 8px solid transparent;
+}
+.rail-art {
+  width: 70px;
+  height: 70px;
+}
+.rail-btn.on {
+  background: #fff;
+  color: var(--ink);
+  font-weight: 900;
+  border-left-color: var(--yellow);
+}
+.rail-btn.on .rail-art {
+  background: none;
+  padding: 0;
+}
+
+/* 메뉴 칸 */
+.grid-wrap {
+  background: #fff;
+}
+.promo {
+  background: var(--red);
+  border-radius: var(--r);
+}
+.promo-tag {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.cat-title {
+  font-weight: 800;
+}
+.card-item {
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  border: 1px solid #eee;
+}
+.item-price {
+  color: var(--ink);
+}
+.item-set {
+  color: var(--ink-2);
+  font-weight: 700;
+}
+.badge {
+  background: var(--yellow);
+  color: var(--ink);
+}
+.badge.hot,
+.badge.new {
+  background: var(--red);
+  color: #fff;
+}
+
+/* 고르는 창 */
+.sheet {
+  border-radius: 24px 24px 0 0;
+}
+.choice {
+  border-radius: 16px;
+  border: 3px solid var(--line);
+  box-shadow: none;
+}
+.choice.on,
+.choice:hover {
+  border-color: var(--yellow);
+  background: #fffbeb;
+}
+
+/* 주문 번호 */
+.order-no {
+  background: var(--yellow);
+}

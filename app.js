@@ -38,7 +38,14 @@ const eul = (w) => {
   const c = w.charCodeAt(w.length - 1) - 0xac00;
   return w + (c >= 0 && c <= 11171 && c % 28 ? "을" : "를");
 };
-const dineLabel = () => (S.dine === "take" ? "포장" : "매장 식사");
+const DINE = {
+  eat: { title: "매장에서 먹기", sub: "매장 식사", chip: "매장 식사", ...UI.dine?.eat },
+  take: { title: "포장하기", sub: "가지고 가기", chip: "포장", ...UI.dine?.take },
+};
+const dineLabel = () => (S.dine === "take" ? DINE.take.chip : DINE.eat.chip);
+/** 세트 종류별 추가 금액. 메뉴에 sets: { set: 7600 } 처럼 값이 있으면 그 가격을 쓴다. */
+const modeDelta = (item, m) => (item.sets?.[m.id] != null ? item.sets[m.id] - item.price : m.delta);
+const setGroup = (item) => item.set && SETS[item.set];
 
 // ───────── 화면 크기: 1080×1920 키오스크 화면을 창에 맞춰 줄인다 ─────────
 const $stage = document.getElementById("stage");
@@ -112,13 +119,13 @@ const SCREENS = {
       <div class="start-choices">
         <button class="dine-btn" data-a="dine" data-v="eat">
           <span class="dine-art">${art("tray")}</span>
-          <strong>매장에서 먹기</strong>
-          <small>매장 식사</small>
+          <strong>${DINE.eat.title}</strong>
+          <small>${DINE.eat.sub}</small>
         </button>
         <button class="dine-btn" data-a="dine" data-v="take">
           <span class="dine-art">${art("bag")}</span>
-          <strong>포장하기</strong>
-          <small>가지고 가기</small>
+          <strong>${DINE.take.title}</strong>
+          <small>${DINE.take.sub}</small>
         </button>
       </div>
       <div class="start-bottom">
@@ -313,6 +320,14 @@ const SCREENS = {
     </section>`,
 };
 
+function setLabel(i) {
+  const modes = setGroup(i)?.modes ?? [];
+  const set = modes.find((m) => m.id === "set");
+  return set && modes.some((m) => m.id === "single")
+    ? `<span class="item-set">세트 ${won(i.price + modeDelta(i, set))}</span>`
+    : `<span class="item-kcal">${i.kcal} kcal</span>`;
+}
+
 function itemCard(i) {
   return `
     <button class="card-item ${i.soldOut ? "sold" : ""}" data-a="item" data-v="${i.id}">
@@ -320,7 +335,7 @@ function itemCard(i) {
       <span class="item-art">${art(i.art)}</span>
       <span class="item-name">${i.name}</span>
       <span class="item-price">${won(i.price)}</span>
-      ${i.set ? `<span class="item-set">세트 ${won(i.price + SETS[i.set].modes[1].delta)}</span>` : `<span class="item-kcal">${i.kcal} kcal</span>`}
+      ${setLabel(i)}
       ${i.soldOut ? `<span class="sold-tag">품절</span>` : ""}
     </button>`;
 }
@@ -376,7 +391,8 @@ function openItem(id) {
   const item = byId[id];
   if (!item) return;
   if (item.soldOut) return toast("죄송해요. 지금은 품절이에요.");
-  S.wiz = { item, step: null, mode: item.set ? null : "single", extra: null, side: null, drink: null, opts: [], qty: 1 };
+  const modes = setGroup(item)?.modes;
+  S.wiz = { item, step: null, mode: !modes ? "single" : modes.length === 1 ? modes[0].id : null, extra: null, side: null, drink: null, opts: [], qty: 1 };
   S.wiz.step = wizSteps(S.wiz)[0];
   renderOverlay();
 }
@@ -384,7 +400,7 @@ function openItem(id) {
 function wizSteps(w) {
   const steps = [];
   const set = w.item.set && SETS[w.item.set];
-  if (set) steps.push("mode");
+  if (set && set.modes.length > 1) steps.push("mode");
   if (set && w.mode && w.mode !== "single") {
     if (set.modes.find((m) => m.id === w.mode)?.extra) steps.push("extra");
     if (set.sides.length > 1) steps.push("side");
@@ -423,7 +439,7 @@ function wizLine(w) {
   const opts = (item.options ?? []).map((o, k) => o.choices[w.opts[k] ?? 0]);
   const extra = w.mode !== "single" && mode?.extra ? mode.extra.choices[w.extra ?? 0] : null;
   const large = Boolean(mode?.large);
-  const unit = item.price + (mode?.delta ?? 0) + (extra?.delta ?? 0) + (side?.delta ?? 0) + (drink?.delta ?? 0) + opts.reduce((s, c) => s + c.delta, 0);
+  const unit = item.price + (mode ? modeDelta(item, mode) : 0) + (extra?.delta ?? 0) + (side?.delta ?? 0) + (drink?.delta ?? 0) + opts.reduce((s, c) => s + c.delta, 0);
   const name = item.name + (mode?.suffix ?? "");
   const sub = [extra?.label, side && side.label + (large && side.id === "fries" ? " 라지" : ""), drink && drink.label + (large ? " 라지" : ""), ...opts.map((c) => c.label)]
     .filter(Boolean)
@@ -457,10 +473,10 @@ function wizardHtml() {
 
   let body = "";
   if (w.step === "mode") {
-    body = `${head("세트로 드시겠어요?", "세트를 고르면 사이드와 음료를 함께 드려요")}
+    body = `${head(set.modeTitle ?? "세트로 드시겠어요?", set.modeSub ?? "세트를 고르면 사이드와 음료를 함께 드려요")}
       <div class="choices ${set.modes.length === 3 ? "three" : "two"}">
         ${set.modes
-          .map((m) => choice("wizMode", m.id, m.label, m.desc, won(item.price + m.delta), m.id === "single" ? item.art : (m.art ?? "tray"), w.mode === m.id))
+          .map((m) => choice("wizMode", m.id, m.label, m.desc, won(item.price + modeDelta(item, m)), m.id === "single" ? item.art : (m.art ?? "tray"), w.mode === m.id))
           .join("")}
       </div>${foot()}`;
   } else if (w.step === "extra") {
@@ -470,7 +486,7 @@ function wizardHtml() {
         ${ex.choices.map((c, ci) => choice("wizExtra", ci, c.label, c.desc ?? "", c.delta ? `+${won(c.delta)}` : "추가 금액 없음", c.art, w.extra === ci)).join("")}
       </div>${foot()}`;
   } else if (w.step === "side") {
-    body = `${head("사이드를 골라 주세요", set.modes.find((m) => m.id === w.mode)?.large ? "감자튀김은 라지 크기로 드려요" : "")}
+    body = `${head("사이드를 골라 주세요", set.modes.find((m) => m.id === w.mode)?.large ? (set.largeSideNote ?? "감자튀김은 라지 크기로 드려요") : "")}
       <div class="choices four">
         ${set.sides.map((s) => choice("wizSide", s.id, s.label, "", s.delta ? `+${won(s.delta)}` : "추가 금액 없음", s.art, w.side === s.id)).join("")}
       </div>${foot()}`;
