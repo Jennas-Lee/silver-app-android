@@ -1,0 +1,230 @@
+/* 치킨 가게: 빨강 · 검정 · 흰색, 위쪽 가로 종류 탭 */
+:root {
+  --red: #e4002b;
+  --red-dark: #b8001f;
+  --yellow: #e4002b;
+  --yellow-soft: #fdecef;
+  --ink: #202020;
+  --ink-2: #5f5f5f;
+  --line: #e7e7e7;
+  --bg: #f5f5f5;
+  --r: 20px;
+}
+
+/* 로고 */
+.logo-mark {
+  background: #fff;
+  border: 4px solid var(--red);
+}
+.logo-text {
+  color: var(--ink);
+  font-weight: 900;
+  letter-spacing: -1.5px;
+}
+
+/* 시작 화면 */
+.start {
+  background: linear-gradient(180deg, var(--ink) 0 960px, #fff 960px);
+}
+.start-top .logo-mark {
+  border-color: #fff;
+}
+.start-hero {
+  background: radial-gradient(circle at 50% 40%, #3a3a3a 0 34%, #2a2a2a 35% 100%);
+  color: #fff;
+  border: 6px solid var(--red);
+}
+.hero-sub {
+  color: #fff;
+  background: var(--red);
+  display: inline-block;
+  padding: 4px 26px;
+  border-radius: 999px;
+  margin-top: 8px;
+}
+.dine-btn {
+  border: 4px solid var(--line);
+  box-shadow: none;
+  border-radius: 20px;
+}
+.dine-btn:hover {
+  border-color: var(--red);
+}
+.dine-btn strong {
+  color: var(--ink);
+}
+.lang.on {
+  background: var(--red);
+}
+
+/* 머리: 빨간 띠 */
+.top {
+  background: var(--red);
+  border-bottom: 0;
+  color: #fff;
+}
+.top .logo-text {
+  color: #fff;
+}
+.top .logo-mark {
+  border-color: #fff;
+}
+.top .ghost {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+.dine-chip {
+  background: #fff;
+  border: 0;
+  color: var(--ink);
+}
+
+/* 위쪽 가로 종류 탭 */
+.tabs {
+  flex: none;
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid var(--line);
+  padding: 0 12px;
+}
+.tab {
+  flex: 1;
+  height: 108px;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink-2);
+  border-bottom: 8px solid transparent;
+  padding-top: 8px;
+}
+.tab.on {
+  color: var(--red);
+  border-bottom-color: var(--red);
+  font-weight: 900;
+}
+
+/* 메뉴 칸 */
+.grid-wrap {
+  padding: 28px 32px 40px;
+}
+.promo {
+  background: var(--ink);
+  border-radius: var(--r);
+  border-left: 18px solid var(--red);
+}
+.promo-tag {
+  background: var(--red);
+  color: #fff;
+}
+.cat-title {
+  border-left: 10px solid var(--red);
+  padding-left: 18px;
+}
+.card-item {
+  border-radius: var(--r);
+  box-shadow: none;
+  border: 2px solid var(--line);
+  padding-bottom: 0;
+  overflow: hidden;
+}
+.card-item:hover {
+  border-color: var(--red);
+}
+.item-price {
+  color: var(--ink);
+}
+.item-set,
+.item-kcal {
+  width: calc(100% + 32px);
+  margin: 14px -16px 0;
+  padding: 12px 0;
+  background: #f7f7f7;
+  border-top: 2px solid var(--line);
+}
+.item-set {
+  color: var(--red);
+  font-weight: 800;
+}
+.badge {
+  background: var(--ink);
+  color: #fff;
+}
+.badge.new,
+.badge.hot {
+  background: var(--red);
+}
+
+/* 주문 내역 */
+.cart {
+  border-top: 0;
+  background: #fff;
+}
+.cart-side {
+  background: var(--ink);
+  color: #fff;
+  border-left: 0;
+}
+.cart-sum span {
+  color: #bbb;
+}
+.cart-sum strong {
+  color: #fff;
+}
+.cart-side .secondary {
+  background: #3b3b3b;
+  color: #fff;
+}
+
+/* 고르는 창 */
+.sheet {
+  border-radius: 28px 28px 0 0;
+  border-top: 10px solid var(--red);
+}
+.choice {
+  border-radius: 20px;
+  box-shadow: none;
+  border: 3px solid var(--line);
+}
+.choice.on,
+.choice:hover {
+  border-color: var(--red);
+  background: #fff7f8;
+}
+.choice-price {
+  color: var(--ink);
+}
+
+/* 확인 · 결제 */
+.review-total,
+.amount-box {
+  background: var(--ink);
+}
+.review-total .sum strong,
+.amount-box strong {
+  color: #fff;
+}
+.pay-btn {
+  box-shadow: none;
+  border: 3px solid var(--line);
+  border-radius: 20px;
+}
+.pay-btn:hover {
+  border-color: var(--red);
+}
+.card {
+  background: linear-gradient(135deg, #3a3a3a, #111);
+}
+
+/* 주문 번호 */
+.order-no {
+  background: var(--red);
+  border-radius: 32px;
+  width: 640px;
+  height: 480px;
+}
+.order-no span,
+.order-no strong {
+  color: #fff;
+}
+.number h1 {
+  color: var(--ink);
+}

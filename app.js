@@ -1,5 +1,7 @@
-import { art } from "./art.js";
-import { BRAND, CATEGORIES, ITEMS, RECOMMENDED, SETS, UPSELL } from "./menu.js";
+// 어떤 가게 화면인지: <body data-kit="./chicken"> 처럼 정한다 (없으면 이 폴더의 버거 가게)
+const KIT = document.body.dataset.kit ?? ".";
+const { art } = await import(`${KIT}/art.js`);
+const { BRAND, CATEGORIES, ITEMS, RECOMMENDED, SETS, UPSELL, UI } = await import(`${KIT}/menu.js`);
 
 // ───────── 설정 ─────────
 const params = new URLSearchParams(location.search);
@@ -76,7 +78,7 @@ function toast(msg) {
 
 const logo = (big = false) => `
   <div class="logo ${big ? "big" : ""}">
-    <span class="logo-mark">${art("bulgogi")}</span>
+    <span class="logo-mark">${art(UI.logoArt)}</span>
     <span class="logo-text">${BRAND.name}</span>
   </div>`;
 
@@ -95,12 +97,12 @@ const SCREENS = {
     <section class="start">
       <div class="start-top">${logo(true)}</div>
       <div class="start-hero">
-        <div class="hero-badge">NEW</div>
-        <div class="hero-art">${art("bacon")}</div>
+        <div class="hero-badge">${UI.hero.tag}</div>
+        <div class="hero-art">${art(UI.hero.art)}</div>
         <div class="hero-copy">
-          <p class="hero-small">새로 나왔어요</p>
-          <h1>베이컨 토마토 버거</h1>
-          <p class="hero-sub">세트 ${won(8500)}부터</p>
+          <p class="hero-small">${UI.hero.small}</p>
+          <h1>${UI.hero.title}</h1>
+          <p class="hero-sub">${UI.hero.sub}</p>
         </div>
       </div>
       <div class="start-ask">
@@ -136,19 +138,28 @@ const SCREENS = {
     const items = S.cat === "rec" ? RECOMMENDED.map((id) => byId[id]) : ITEMS.filter((i) => i.cat === S.cat);
     return `
     ${header()}
+    ${
+      UI.layout === "tabs"
+        ? `<nav class="tabs">${CATEGORIES.map((c) => `<button class="tab ${c.id === S.cat ? "on" : ""}" data-a="cat" data-v="${c.id}">${c.name}</button>`).join("")}</nav>`
+        : ""
+    }
     <div class="menu-body">
-      <nav class="rail">
+      ${
+        UI.layout === "tabs"
+          ? ""
+          : `<nav class="rail">
         ${CATEGORIES.map(
           (c) => `<button class="rail-btn ${c.id === S.cat ? "on" : ""}" data-a="cat" data-v="${c.id}">
             <span class="rail-art">${art(c.art)}</span><span>${c.name}</span></button>`,
         ).join("")}
-      </nav>
+      </nav>`
+      }
       <main class="grid-wrap" data-keep="grid-${S.cat}">
         ${
           S.cat === "rec"
-            ? `<div class="promo" data-a="item" data-v="bacon">
-                <div class="promo-copy"><span class="promo-tag">NEW</span><h3>베이컨 토마토 버거</h3><p>바삭한 베이컨과 생토마토를 듬뿍</p></div>
-                <div class="promo-art">${art("bacon")}</div></div>`
+            ? `<div class="promo" data-a="item" data-v="${UI.promo.item}">
+                <div class="promo-copy"><span class="promo-tag">${UI.promo.tag}</span><h3>${UI.promo.title}</h3><p>${UI.promo.text}</p></div>
+                <div class="promo-art">${art(UI.promo.art ?? byId[UI.promo.item].art)}</div></div>`
             : ""
         }
         <h2 class="cat-title">${cat.name}</h2>
@@ -365,7 +376,7 @@ function openItem(id) {
   const item = byId[id];
   if (!item) return;
   if (item.soldOut) return toast("죄송해요. 지금은 품절이에요.");
-  S.wiz = { item, step: null, mode: item.set ? null : "single", side: null, drink: null, opts: [], qty: 1 };
+  S.wiz = { item, step: null, mode: item.set ? null : "single", extra: null, side: null, drink: null, opts: [], qty: 1 };
   S.wiz.step = wizSteps(S.wiz)[0];
   renderOverlay();
 }
@@ -375,6 +386,7 @@ function wizSteps(w) {
   const set = w.item.set && SETS[w.item.set];
   if (set) steps.push("mode");
   if (set && w.mode && w.mode !== "single") {
+    if (set.modes.find((m) => m.id === w.mode)?.extra) steps.push("extra");
     if (set.sides.length > 1) steps.push("side");
     steps.push("drink");
   }
@@ -409,14 +421,15 @@ function wizLine(w) {
   const side = w.mode !== "single" && set ? (set.sides.length === 1 ? set.sides[0] : set.sides.find((s) => s.id === w.side)) : null;
   const drink = w.mode !== "single" && set ? set.drinks.find((d) => d.id === w.drink) : null;
   const opts = (item.options ?? []).map((o, k) => o.choices[w.opts[k] ?? 0]);
-  const large = w.mode === "large";
-  const unit = item.price + (mode?.delta ?? 0) + (side?.delta ?? 0) + (drink?.delta ?? 0) + opts.reduce((s, c) => s + c.delta, 0);
-  const name = item.name + (w.mode === "set" ? " 세트" : large ? " 라지 세트" : "");
-  const sub = [side && side.label + (large && side.id === "fries" ? " 라지" : ""), drink && drink.label + (large ? " 라지" : ""), ...opts.map((c) => c.label)]
+  const extra = w.mode !== "single" && mode?.extra ? mode.extra.choices[w.extra ?? 0] : null;
+  const large = Boolean(mode?.large);
+  const unit = item.price + (mode?.delta ?? 0) + (extra?.delta ?? 0) + (side?.delta ?? 0) + (drink?.delta ?? 0) + opts.reduce((s, c) => s + c.delta, 0);
+  const name = item.name + (mode?.suffix ?? "");
+  const sub = [extra?.label, side && side.label + (large && side.id === "fries" ? " 라지" : ""), drink && drink.label + (large ? " 라지" : ""), ...opts.map((c) => c.label)]
     .filter(Boolean)
     .join(" · ");
   const artKind = opts.find((c) => c.art)?.art ?? item.art;
-  return { id: item.id, key: `${item.id}|${w.mode}|${side?.id}|${drink?.id}|${w.opts.join(",")}`, name, sub, unit, art: artKind, qty: w.qty };
+  return { id: item.id, key: `${item.id}|${w.mode}|${w.extra}|${side?.id}|${drink?.id}|${w.opts.join(",")}`, name, sub, unit, art: artKind, qty: w.qty };
 }
 
 function wizardHtml() {
@@ -447,16 +460,22 @@ function wizardHtml() {
     body = `${head("세트로 드시겠어요?", "세트를 고르면 사이드와 음료를 함께 드려요")}
       <div class="choices ${set.modes.length === 3 ? "three" : "two"}">
         ${set.modes
-          .map((m) => choice("wizMode", m.id, m.label, m.desc, won(item.price + m.delta), m.id === "single" ? item.art : "tray", w.mode === m.id))
+          .map((m) => choice("wizMode", m.id, m.label, m.desc, won(item.price + m.delta), m.id === "single" ? item.art : (m.art ?? "tray"), w.mode === m.id))
           .join("")}
       </div>${foot()}`;
+  } else if (w.step === "extra") {
+    const ex = set.modes.find((m) => m.id === w.mode).extra;
+    body = `${head(ex.title)}
+      <div class="choices ${ex.choices.length === 3 ? "three" : "two"}">
+        ${ex.choices.map((c, ci) => choice("wizExtra", ci, c.label, c.desc ?? "", c.delta ? `+${won(c.delta)}` : "추가 금액 없음", c.art, w.extra === ci)).join("")}
+      </div>${foot()}`;
   } else if (w.step === "side") {
-    body = `${head("사이드를 골라 주세요", w.mode === "large" ? "감자튀김은 라지 크기로 드려요" : "")}
+    body = `${head("사이드를 골라 주세요", set.modes.find((m) => m.id === w.mode)?.large ? "감자튀김은 라지 크기로 드려요" : "")}
       <div class="choices four">
         ${set.sides.map((s) => choice("wizSide", s.id, s.label, "", s.delta ? `+${won(s.delta)}` : "추가 금액 없음", s.art, w.side === s.id)).join("")}
       </div>${foot()}`;
   } else if (w.step === "drink") {
-    body = `${head("음료를 골라 주세요", w.mode === "large" ? "음료는 라지 크기로 드려요" : "")}
+    body = `${head("음료를 골라 주세요", set.modes.find((m) => m.id === w.mode)?.large ? "음료는 라지 크기로 드려요" : "")}
       <div class="choices four">
         ${set.drinks.map((d) => choice("wizDrink", d.id, d.label, "", d.delta ? `+${won(d.delta)}` : "추가 금액 없음", d.art, w.drink === d.id)).join("")}
       </div>${foot()}`;
@@ -576,9 +595,9 @@ function reset() {
 function nextOrderNo() {
   let n = 100 + Math.floor(Math.random() * 300);
   try {
-    n = Number(localStorage.getItem("kiosk-order-no") ?? n) + 1;
+    n = Number(localStorage.getItem(`kiosk-order-no-${KIT}`) ?? n) + 1;
     if (n > 999) n = 101;
-    localStorage.setItem("kiosk-order-no", String(n));
+    localStorage.setItem(`kiosk-order-no-${KIT}`, String(n));
   } catch {}
   return n;
 }
@@ -639,6 +658,10 @@ const ACTIONS = {
   wizBack,
   wizMode: (v) => {
     S.wiz.mode = v;
+    wizNext();
+  },
+  wizExtra: (v) => {
+    S.wiz.extra = Number(v);
     wizNext();
   },
   wizSide: (v) => {
@@ -778,7 +801,8 @@ const jump = params.get("screen");
 if (jump && SCREENS[jump]) {
   S.dine = "eat";
   S.cat = params.get("cat") ?? "rec";
-  if (jump !== "menu") addLine({ id: "big", key: "demo", name: "빅 클래식 버거 세트", sub: "감자튀김 · 콜라", unit: 8200, art: "big", qty: 1 });
+  const d = byId[RECOMMENDED[0]];
+  if (jump !== "menu") addLine({ id: d.id, key: "demo", name: d.name, sub: "", unit: d.price, art: d.art, qty: 1 });
   S.screen = jump;
   if (jump === "number") S.orderNo = 123;
 }

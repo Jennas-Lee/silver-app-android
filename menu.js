@@ -2,6 +2,14 @@
 
 export const BRAND = { name: "버거하우스", slogan: "오늘도 맛있게, 버거하우스" };
 
+/** 화면 꾸밈: rail = 왼쪽 세로 종류, tabs = 위쪽 가로 종류 */
+export const UI = {
+  layout: "rail",
+  logoArt: "bulgogi",
+  hero: { art: "bacon", tag: "NEW", small: "새로 나왔어요", title: "베이컨 토마토 버거", sub: "세트 8,500원부터" },
+  promo: { item: "bacon", tag: "NEW", title: "베이컨 토마토 버거", text: "바삭한 베이컨과 생토마토를 듬뿍" },
+};
+
 export const CATEGORIES = [
   { id: "rec", name: "추천 메뉴", art: "bacon" },
   { id: "burger", name: "버거", art: "big" },
@@ -78,8 +86,8 @@ export const SETS = {
   burger: {
     modes: [
       { id: "single", label: "단품", desc: "버거만", delta: 0 },
-      { id: "set", label: "세트", desc: "버거 + 감자튀김 + 음료", delta: 2000 },
-      { id: "large", label: "라지 세트", desc: "버거 + 감자튀김 라지 + 음료 라지", delta: 2700 },
+      { id: "set", label: "세트", desc: "버거 + 감자튀김 + 음료", delta: 2000, suffix: " 세트" },
+      { id: "large", label: "라지 세트", desc: "버거 + 감자튀김 라지 + 음료 라지", delta: 2700, suffix: " 라지 세트", large: true },
     ],
     sides: [
       { id: "fries", label: "감자튀김", art: "fries", delta: 0 },
@@ -101,7 +109,7 @@ export const SETS = {
   morning: {
     modes: [
       { id: "single", label: "단품", desc: "메뉴만", delta: 0 },
-      { id: "set", label: "세트", desc: "메뉴 + 해시브라운 + 커피 또는 음료", delta: 1800 },
+      { id: "set", label: "세트", desc: "메뉴 + 해시브라운 + 커피 또는 음료", delta: 1800, suffix: " 세트" },
     ],
     sides: [{ id: "hashbrown", label: "해시브라운", art: "hashbrown", delta: 0 }],
     drinks: [

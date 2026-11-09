@@ -9,7 +9,7 @@ function svg(body) {
 }
 
 // 버거: 위에서 아래 순서의 층 목록
-const LAYER_H = { top: 50, mid: 16, bottom: 26, beef: 20, chicken: 26, shrimp: 24, cheese: 8, lettuce: 10, tomato: 9, bacon: 8, onion: 6, egg: 14, sausage: 16 };
+const LAYER_H = { hash: 18, top: 50, mid: 16, bottom: 26, beef: 20, chicken: 26, shrimp: 24, cheese: 8, lettuce: 10, tomato: 9, bacon: 8, onion: 6, egg: 14, sausage: 16 };
 
 function burger(layers, opts = {}) {
   const h = layers.reduce((s, l) => s + LAYER_H[l], 0);
@@ -68,6 +68,8 @@ function layer(l, y, h, opts) {
     case "bacon":
       return `<path d="M28 ${y + 4} q12 -6 24 0 t24 0 t24 0 t24 0 t24 0 t24 0 V${y + h} q-12 6 -24 0 t-24 0 t-24 0 t-24 0 t-24 0 t-24 0 Z" fill="#B5442B"/>
         <path d="M28 ${y + 4} q12 -6 24 0 t24 0 t24 0 t24 0 t24 0 t24 0" stroke="#F3B7A0" stroke-width="2" fill="none"/>`;
+    case "hash":
+      return `<rect x="30" y="${y}" width="140" height="${h}" rx="9" fill="#E3A43C"/><path d="M50 ${y + 7} l8 3 M90 ${y + 10} l8 3 M130 ${y + 6} l8 3" stroke="#B37218" stroke-width="3" stroke-linecap="round"/>`;
     case "onion":
       return `<rect x="30" y="${y}" width="140" height="${h}" rx="3" fill="#F1E6F3"/>`;
     default:
@@ -242,3 +244,5 @@ const ART = {
 export function art(kind) {
   return (ART[kind] ?? ART.bulgogi)();
 }
+
+export { svg, inner, burger, fries, cup, iced, hotcup, cone, coleslaw };
